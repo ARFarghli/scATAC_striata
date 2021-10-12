@@ -1,0 +1,563 @@
+---
+title: "projStriata2"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r Load projStriata1, include=FALSE}
+projStriata1 <- loadArchRProject(path = "./Save-ProjStriata1/")
+```
+
+```{r Filter Doublets, eval=TRUE}
+# Next we can filter out putative doublets based on the scores established in the `infer doublets` chunk. Importantly, this does not delete the data from the Arrow files, but rather forces ArchRProject to ignore these cells. 
+projStriata2 <- filterDoublets(projStriata1)
+```
+
+Filtering 153 cells from ArchRProject!
+	Ctrl2_DEDUP : 43 of 2088 (2.1%)
+	Mix1_DEDUP : 26 of 1614 (1.6%)
+	Ctrl4_DEDUP : 20 of 1438 (1.4%)
+	Mix4_DEDUP : 19 of 1396 (1.4%)
+	Ctrl3_DEDUP : 15 of 1238 (1.2%)
+	Ctrl1_DEDUP : 12 of 1119 (1.1%)
+	Mix3_DEDUP : 14 of 1214 (1.2%)
+	Mix2_DEDUP : 4 of 688 (0.6%)
+
+```{r Run LSI, echo=TRUE, cache=FALSE, results='hide', message=FALSE}
+# ArchR implements an iterative LSI dimensionality reduction via the addIterativeLSI() function.
+projStriata2 <- addIterativeLSI(
+    ArchRProj = projStriata2,
+    useMatrix = "TileMatrix", 
+    name = "IterativeLSI", 
+    iterations = 2, 
+    clusterParams = list( #See Seurat::FindClusters
+        resolution = c(0.2), 
+        sampleCells = 10000, 
+        n.start = 10
+    ), 
+    varFeatures = 25000, 
+    dimsToUse = 1:30
+)
+```
+
+#### Clustering 
+<br>
+Now that we defined the most important peaks of each cell with iterative LSI, we can now cluster our cells.
+```{r Dimensionality Reduction, echo=TRUE, results='hide', eval=TRUE, message = F, warning = F, cache=FALSE}
+projStriata2 <- addClusters(
+    input = projStriata2,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters",
+    resolution = 0.8
+)
+```
+
+To access these clusters we can use the $ accessor which shows the cluster ID for each single cell.
+```{r Acess clusters, eval=TRUE, include=FALSE}
+head(projStriata2$Clusters)
+```
+
+We can tabulate the number of cells present in each cluster:
+```{r Tabulate number of cells in each cluster, include=TRUE}
+table(projStriata2$Clusters)
+write.table(as.data.frame(table(projStriata2$Clusters)), file="cellsPerCluster.csv", quote=F,sep=",",row.names=F)
+```
+
+##### To better understand which samples reside in which clusters, we can create a cluster confusion matrix across each sample using the confusionMatrix() function. 
+<br>
+```{r Confusion matrix of which samples reside in which cluster, echo=FALSE, cache=FALSE}
+cM <- confusionMatrix(paste0(projStriata2$Clusters), paste0(projStriata2$Sample))
+kable(cM)
+write.table(as.data.frame(cM),file="cM.csv", quote=F,sep=",",row.names=TRUE)
+```
+
+```{r Confusion matrix as heatmap, eval=TRUE}
+library(pheatmap)
+cM <- cM / Matrix::rowSums(cM)
+p <- pheatmap::pheatmap(
+    mat = as.matrix(cM), 
+    color = paletteContinuous("whiteBlue"), 
+    border_color = "black"
+)
+p
+```
+
+
+```{r UMAP Generation and Visualization, echo=TRUE, cache=FALSE, message=FALSE, results='hide'}
+projStriata2 <- addUMAP(
+    ArchRProj = projStriata2, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine"
+)
+```
+
+```{r Add treatment information to sample}
+projStriata2$Treatment <- plyr::revalue(projStriata2$Sample, 
+                                   c('Ctrl1_DEDUP' = "Ctrl",
+                                     'Ctrl2_DEDUP' = "Ctrl",
+                                     'Ctrl3_DEDUP' = "Ctrl",
+                                     'Ctrl4_DEDUP' = "Ctrl",
+                                     'Mix1_DEDUP' = "Mix",
+                                     'Mix2_DEDUP' = "Mix",
+                                     'Mix3_DEDUP' = "Mix",
+                                     'Mix4_DEDUP' = "Mix"
+                                     ))
+```
+
+
+```{r UMAP Visualization, include=FALSE, eval=TRUE}
+# We can visualize the UMAP in a number of ways by calling various attributes of the cells stored in the `cellColData` matrix. Here, we can visualize the UMAP by sample, or clusters.
+p1 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Clusters", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r Save UMAP embedding as PDF, include=FALSE, message = FALSE}
+#To save an editable vectorized version of this plot, we use the plotPDF() function.
+plotPDF(p1,p2, p3, name = "Plot-UMAP-Sample-Clusters.pdf",
+        ArchRProj = projStriata2, addDOC = FALSE, width = 5, height = 5)
+```
+
+### Determine sample proportions in each cluster
+
+```{r}
+metadata <- projStriata2@cellColData
+idxPass <- which(metadata$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata2$TSSEnrichment >= 4)
+cellsSample <- projStriata2$cellNames[idxSample]
+projStriata2.sub <- projStriata2[cellsSample, ]
+
+write.table(x=table(projStriata2.sub$Sample)
+            , "Number_of_cells_per_Sample_4TSSEnrichment.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = T,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+```
+
+```{r}
+table(projStriata2.sub$Treatment)
+table(projStriata2.sub$Clusters)
+d <- data.frame(projStriata2.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+```
+
+```{r}
+plotPDF(p4,p5, name = "Plot-UMAP-DoubletEnrichment-TSSEnrichment", ArchRProj = projStriata2, addDOC = FALSE, width = 5, height = 5)
+```
+
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters), nrow)
+names(cp) <- c("sample", "cluster", "cells")
+names(cp) <- c("sample", "cluster", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=10)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:10])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp$cluster <- factor(cp$cluster,levels(cp$cluster)[c(1,3,4,5,6,7,8,9,10,2)])
+levels(cp$cluster)
+```
+
+```{r}
+p6 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,70))
+p6 + ggsave(filename = "proportion_all.png")
+
+p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p7 + ggsave(filename = "proportions.png") 
+```
+
+
+### Gene Scores and Marker Genes with ArchR
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+# We'll begin by identifying marker genes using gene scores. Recall, gene scores were added when the ArchRProject was created in
+addArchRThreads(threads = 1)
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata2, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Clusters",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon"
+)
+```
+
+We can then make a list of marker genes with the desired cutoffs and list for each cluster
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+addArchRThreads(threads = 22)
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= 1.25")
+markerList$C2
+write.table(as.data.frame(markerList),file="markerlist.csv", quote=F,sep=",",row.names=F)
+```
+
+```{r, include=FALSE, eval=TRUE}
+heatmapGS <- plotMarkerHeatmap(
+  seMarker = markersGS, 
+  cutOff = "FDR <= 0.01 & Log2FC >= 1.25", 
+  transpose = TRUE
+)
+```
+
+```{r Save PDF of all marker genes, include=FALSE, eval=TRUE}
+plotPDF(heatmapGS, name = "GeneScores-Marker-Heatmap", width = 8, height = 6, ArchRProj = projStriata2, addDOC = FALSE)
+```
+
+```{r load markers}
+scRNAmarker <- read_csv("mmc3.csv") %>% 
+  dplyr::select(-"...1")
+
+scATACmarkers <- read_csv("markerlist.csv") %>% 
+  dplyr::select("group_name", "name", "Log2FC") %>% 
+  dplyr::rename("gene" = "name") %>% 
+  dplyr::rename("Log2FC_atac" = "Log2FC")
+
+scMarkers <- left_join(scRNAmarker, scATACmarkers, by = "gene") %>% 
+  drop_na() %>% 
+  group_by(group_name) %>% 
+  arrange(desc(Log2FC_atac))
+```
+
+
+```{r Assign genes to clusters, message = FALSE, cache = TRUE}
+#Now we can overlay our marker gene scores on our 2D UMAP embedding.
+markerGenes  <- c(
+    "Aqp4", "Gjb6",  #Astrocyte
+    "Mog", "Aspa", #Oligodentrocyte
+    "Flt1", #Vascular cells
+    "Cx3cr1", "Tmem119", "Tgfbr1", "Ccl4", #Immune Cells
+    "Pdgfra", #Stem Cells
+    "Dlx1", #Stem cells
+    "Prlr", "Slc4a5","Tmem72", #Ependy sec
+    "Tmem212", #Ependy cilia
+    "Mrc1", #Immune cells
+    "Trank1", "Atp1a3", "Rgs9" #Neurons
+    )
+
+heatmapGS <- plotMarkerHeatmap(
+  seMarker = markersGS, 
+  cutOff = "FDR <= 0.01 & Log2FC >= 1.25", 
+  labelMarkers = markerGenes,
+  transpose = TRUE
+)
+```
+
+```{r Save PDF of heat map of all marker genes}
+plotPDF(heatmapGS, name = "GeneScores-Marker-Heatmap", width = 8, height = 6, ArchRProj = projStriata2, addDOC = FALSE)
+```
+
+```{r Assign genes to clusters, message = FALSE, cache = TRUE}
+#Now we can overlay our marker gene scores on our 2D UMAP embedding.
+##These are marker genes pulled from the scMarker table + scRNA paper
+markerGenes  <- c(
+    "Aqp4",  #Astrocyte
+    "Mog", #Oligodentrocyte
+    "Flt1", #Vascular cells
+    "Cx3cr1", "Tgfbr1", #Immune Cells
+    "Pdgfra", #Stem Cells
+    "Dlx1", #Stem cells
+    "Tmem72", #Ependy sec
+    "Tmem212", #Ependy cilia
+    "Mrc1", #Immune cells
+    "Trank1" #Neurons
+    )
+
+p8 <- plotEmbedding(
+    ArchRProj = projStriata2, 
+    colorBy = "GeneScoreMatrix", 
+    name = markerGenes, 
+    embedding = "UMAP",
+    quantCut = c(0.01, 0.95),
+    imputeWeights = NULL
+)
+```
+
+```{r Plot UMAP Marker Genes}
+#To plot a specific gene we can subset this plot list using the gene name.
+p8$Trank1
+
+#Plot all genes defined in markerGenes
+p9 <- lapply(p8, function(x){
+    x + guides(color = FALSE, fill = FALSE) + 
+    theme_ArchR(baseSize = 6.5) +
+    theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+    theme(
+        axis.text.x=element_blank(), 
+        axis.ticks.x=element_blank(), 
+        axis.text.y=element_blank(), 
+        axis.ticks.y=element_blank()
+    )
+})
+do.call(cowplot::plot_grid, c(list(ncol = 3),p2))
+```
+<br>
+
+
+```{r, message=FALSE}
+#Save an editable PDF version
+plotPDF(plotList = p8, 
+    name = "Plot-UMAP-Marker-Genes-WO-Imputation.pdf", 
+    ArchRProj = projStriata2, 
+    addDOC = FALSE, width = 5, height = 5)
+```
+<br>
+
+### Marker Genes Imputation with MAGIC
+
+```{r}
+projStriata2 <- addImputeWeights(projStriata2)
+```
+
+```{r}
+markerGenes  <- c(
+    "Aqp4",  #Astrocyte
+    "Mog", #Oligodentrocyte
+    "Flt1", #Vascular cells
+    "Cx3cr1", #Immune Cells
+    "Pdgfra", #Stem Cells
+    "Dlx1", #Stem cells
+    "Tmem72", #Ependy sec
+    "Tmem212", #Ependy cilia
+    "Mrc1", #Immune cells
+    "Trank1" #Neurons
+    )
+
+p <- plotEmbedding(
+    ArchRProj = projStriata2, 
+    colorBy = "GeneScoreMatrix", 
+    name = markerGenes, 
+    embedding = "UMAP",
+    imputeWeights = getImputeWeights(projStriata2)
+)
+```
+
+```{r}
+#Rearrange for grid plotting
+p2 <- lapply(p, function(x){
+    x + guides(color = FALSE, fill = FALSE) + 
+    theme_ArchR(baseSize = 6.5) +
+    theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+    theme(
+        axis.text.x=element_blank(), 
+        axis.ticks.x=element_blank(), 
+        axis.text.y=element_blank(), 
+        axis.ticks.y=element_blank()
+    )
+})
+do.call(cowplot::plot_grid, c(list(ncol = 3),p2))
+```
+
+```{r All possible marker genes with imputed gene score}
+markerGenes  <- c(
+    "Aqp4", "Gjb6", #Astrocyte
+    "Mog", "Aspa", #Oligodentrocyte
+    "Nfasc", #Newly formed oligodendrocytes NFOs
+    "Klk6", # Mature Oligodendrocytes
+    "Flt1", #Vascular cells
+    "Cx3cr1", "Tmem119", "Olfml3", "Mlxipl", #Immune Cells and Microglia
+    "Mrc1", # Perivascular Macrophages
+    "Pdgfra", #Stem Cells
+    "Dlx1", #Stem cells
+    "A930009A15Rik", # OPC (oligodendrocyte precursor cells)
+    "Tmem72", "Prlr", "Slc4a5", #Ependy sec
+    "Tmem212", #Ependy cilia
+    "Mrc1", #Immune cells
+    "Trank1", "Atp1a3" #Neurons
+    )
+
+p3 <- plotEmbedding(
+    ArchRProj = projStriata2, 
+    colorBy = "GeneScoreMatrix", 
+    name = markerGenes, 
+    embedding = "UMAP",
+    imputeWeights = getImputeWeights(projStriata2)
+)
+```
+
+```{r}
+p3$Slc4a5
+plotPDF(plotList = p3, 
+    name = "Plot-UMAP-All-Marker-Genes-W-Imputation.pdf", 
+    ArchRProj = projStriata2, 
+    addDOC = FALSE, width = 5, height = 5)
+```
+
+```{r}
+#Rearrange for grid plotting
+p4 <- lapply(p3, function(x){
+    x + guides(color = FALSE, fill = FALSE) + 
+    theme_ArchR(baseSize = 6.5) +
+    theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
+    theme(
+        axis.text.x=element_blank(), 
+        axis.ticks.x=element_blank(), 
+        axis.text.y=element_blank(), 
+        axis.ticks.y=element_blank()
+    )
+})
+do.call(cowplot::plot_grid, c(list(ncol = 3),p4))
+```
+
+```{r Tfs and splicing genes}
+markerGenes  <- c(
+    "Sox9", # Astrocyte
+    "Mlxipl", # Immune Cells and Microglia
+    "Foxj1" # Ependy cilia
+    )
+
+p5 <- plotEmbedding(
+    ArchRProj = projStriata2, 
+    colorBy = "GeneScoreMatrix", 
+    name = markerGenes, 
+    embedding = "UMAP",
+    imputeWeights = getImputeWeights(projStriata2)
+)
+```
+
+```{r}
+p5$Sox9
+plotPDF(plotList = p5, 
+    name = "Plot-UMAP-TF-Marker-Genes-W-Imputation.pdf", 
+    ArchRProj = projStriata2, 
+    addDOC = FALSE, width = 5, height = 5)
+```
+
+
+### GO and KEGG analysis
+
+```{r}
+markerList$C1$cluster <- "C1"
+markerList$C2$cluster <- "C2"
+markerList$C3$cluster <- "C3"
+markerList$C4$cluster <- "C4"
+markerList$C5$cluster <- "C5"
+markerList$C6$cluster <- "C6"
+markerList$C7$cluster <- "C7"
+markerList$C8$cluster <- "C8"
+markerList$C9$cluster <- "C9"
+markerList$C10$cluster <- "C10"
+markers <- rbind(markerList$C1,
+                 markerList$C2,
+                 markerList$C3,
+                 markerList$C4,
+                 markerList$C5,
+                 markerList$C6,
+                 markerList$C7,
+                 markerList$C8,
+                 markerList$C9,
+                 markerList$C10)
+write.table(x=markers, "marker_genes.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = FALSE,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+
+```
+
+```{r}
+markers <- read.table("marker_genes.txt", header = TRUE)
+geneid <- markers$name
+markers$entrezid <- AnnotationDbi::select(org.Mm.eg.db, keys=geneid, columns="ENTREZID", 
+                                          keytype="SYMBOL")
+clusterprofilerlist<-list("C1"=subset(markers$entrezid$ENTREZID, markers$cluster =="C1")[1:100], 
+                          # you can use all DA genes in one cluster or set number
+                          # here I only take top 100 genes for each cluster [1:100]
+                          "C2"=subset(markers$entrezid$ENTREZID, markers$cluster =="C2")[1:100],
+                          "C3"=subset(markers$entrezid$ENTREZID, markers$cluster =="C3")[1:100],
+                          "C4"=subset(markers$entrezid$ENTREZID, markers$cluster =="C4")[1:100],
+                          "C5"=subset(markers$entrezid$ENTREZID, markers$cluster =="C5")[1:100],
+                          "C6"=subset(markers$entrezid$ENTREZID, markers$cluster =="C6")[1:100],
+                          "C7"=subset(markers$entrezid$ENTREZID, markers$cluster =="C7")[1:100],
+                          "C8"=subset(markers$entrezid$ENTREZID, markers$cluster =="C8")[1:100],
+                          "C9"=subset(markers$entrezid$ENTREZID, markers$cluster =="C9")[1:100],
+                          "C10"=subset(markers$entrezid$ENTREZID, markers$cluster =="C10")[1:100]
+)
+```
+
+```{r}
+cc_go <- clusterProfiler::compareCluster(geneClusters = clusterprofilerlist,
+                                         fun = "enrichGO", 
+                                         OrgDb= org.Mm.eg.db, 
+                                         ont= "BP", 
+                                         pvalueCutoff=0.05, 
+                                         pAdjustMethod='BH')
+dotplot(cc_go, showCategory = 5) + scale_color_viridis(direction = -1, trans = "log10")
+```
+
+```{r}
+png("cc_go.png", height = 10, width = 20, units = "in", res = 600)
+dotplot(cc_go, showCategory = 5) + scale_color_viridis(direction = -1, trans = "log10")
+dev.off() 
+```
+```{r}
+cc_gos <- clusterProfiler::simplify(cc_go, cutoff=0.05, by= "p.adjust")
+dotplot(cc_gos, showCategory = 5) +scale_color_viridis(direction = -1, trans = "log10")
+```
+```{r}
+png("cc_gos.png", height = 10, width = 20, units = "in", res = 600)
+dotplot(cc_gos, showCategory = 5) +scale_color_viridis(direction = -1, trans = "log10")
+dev.off() 
+```
+
+
+```{r}
+cp <- ddply(projStriata2@cellColData, .(projStriata2@cellColData$Sample, projStriata2@cellColData$Clusters), nrow)
+names(cp) <- c("sample", "cluster", "cells")
+```
+
+
+```{r Save ArchRProject}
+saveArchRProject(ArchRProj = projStriata2, outputDirectory = "Save-ProjStriata2", load = FALSE)
+```
+
+

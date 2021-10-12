@@ -1,0 +1,173 @@
+---
+title: "projStriata1"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r, eval=FALSE,include=FALSE}
+# (if it is required) sort bam files
+# for all bam files in the directory
+for sample in *.bam; do samtools sort -o ${sample%.*}.sort.bam ${sample}; done
+# create index .bai
+for sample in *.sort.bam; do samtools index ${sample} ${sample%.*}.bam.bai; done
+conda activate sinto-env
+for sample in *.sort.bam; do sinto fragments -b ${sample} -f ${sample%.*.*}_fragments -p 20 --use_chrom "" --barcode_regex "(?<=_)(.*)(?=_)"; done
+for sample in *_fragments; do bedtools sort -i ${sample} > ${sample%}.bed; done
+for sample in *_fragments.bed; do bgzip ${sample}; done
+for sample in *_fragments.bed.gz; do tabix -p bed ${sample}; done
+```
+
+```{r Load data and add genome, include = FALSE, eval=TRUE}
+inputFiles <- list.files(path = "data/", 
+                         pattern = "*_fragments.bed.gz")
+inputFiles <- inputFiles[!grepl(".tbi", inputFiles)]
+sampleNames <- gsub("_fragments.bed.gz", "" ,inputFiles)
+sampleNames
+
+inputFiles <- paste0("data/",inputFiles)
+length(inputFiles)
+
+addArchRGenome(genome = "mm10", install = FALSE)
+```
+
+```{r create arrowfiles, include = TRUE, eval=TRUE, message=FALSE}
+ArrowFiles <- createArrowFiles(
+  inputFiles = inputFiles,
+  sampleNames = sampleNames,
+  minTSS = 4, # Don't set this too high because you can always increase later
+  minFrags = 1000, 
+  excludeChr = c("chrM"),
+  nucLength = 147,
+  promoterRegion = c(2000, 100),
+  addTileMat = TRUE,
+  addGeneScoreMat = TRUE,
+  logFile = createLogFile("createArrows"))
+
+#We can inspect the ArrowFiles object to see that it is actually just a character vector of Arrow file paths.
+ArrowFiles
+```
+
+```{r infer doublets, include = TRUE, eval=FALSE, results = 'hide'}
+doubScores <- addDoubletScores(
+  input = ArrowFiles,
+  k = 10, #Refers to how many cells near a "pseudo-doublet" to count.
+  knnMethod = "UMAP", #Refers to the embedding/dimensionality reduction method to be used for k-nearest neighbor search.
+  LSIMethod = 1,
+  verbose = TRUE
+)
+```
+
+```{r Create ArchRProject, include=FALSE, eval=TRUE, results='hide', cache=FALSE}
+projStriata1 <- ArchRProject(
+  ArrowFiles = ArrowFiles, 
+  outputDirectory = "Striata",
+  copyArrows = TRUE #This is recommended so that if you modify the Arrow files you have an original copy for later usage.
+)
+projStriata1
+```
+numberOfCells(1): 16622 <br>
+medianTSS(1): 10.028 <br>
+medianFrags(1): 2459 <br>
+minTSS 4 <br>
+numberOfCells(1): 16148 <br>
+medianTSS(1): 10.209 <br>
+medianFrags(1): 2458 <br>
+minTSS6 <br>
+numberOfCells(1): 14184 <br>
+medianTSS(1): 11.062 <br>
+medianFrags(1): 2376 <br>
+
+Excluding BPA samples:
+numberOfCells(1): 10795
+medianTSS(1): 9.958
+medianFrags(1): 2443
+
+```{r message = F, warning = F, eval=FALSE, include=FALSE}
+paste0("Memory Size = ", round(object.size(projStriata1) / 10^6, 3), " MB")
+# We can query which data matrices are available in the ArchRProject. At this point in time, we should have “GeneScoreMatrix” and “TileMatrix”. As we continue to work and add to the ArchRProject, we can use the following function to query which matricies are added to the project.
+getAvailableMatrices(projStriata1)
+```
+
+```{r Ridge plot for each sample for the TSS enrichment scores, message=FALSE, warning=FALSE}
+p1 <- plotGroups(
+    ArchRProj = projStriata1, 
+    groupBy = "Sample", 
+    colorBy = "cellColData", 
+    name = "TSSEnrichment",
+    plotAs = "ridges"
+   )
+p1
+```
+
+```{r Violin plot for each sample for the TSS enrichment scores, message=FALSE, warning=FALSE}
+p2 <- plotGroups(
+    ArchRProj = projStriata1, 
+    groupBy = "Sample", 
+    colorBy = "cellColData", 
+    name = "TSSEnrichment",
+    plotAs = "violin",
+    ylim = c(0,35),
+    alpha = 0.4,
+    addBoxPlot = TRUE
+   )
+p2
+```
+
+```{r Ridge plot for each sample for the log10(unique nuclear fragments), message=FALSE, warning=FALSE}
+p3 <- plotGroups(
+    ArchRProj = projStriata1, 
+    groupBy = "Sample", 
+    colorBy = "cellColData", 
+    name = "log10(nFrags)",
+    plotAs = "ridges"
+   )
+```
+
+```{r Violin plot for each sample for the log10(unique nuclear fragments), message=FALSE, warning=FALSE}
+p4 <- plotGroups(
+    ArchRProj = projStriata1, 
+    groupBy = "Sample", 
+    colorBy = "cellColData", 
+    name = "log10(nFrags)",
+    plotAs = "violin",
+    alpha = 0.4,
+    addBoxPlot = TRUE
+   )
+```
+
+```{r Save plots, include=FALSE, message=FALSE}
+plotPDF(p1,p2,p3,p4, name = "QC-Sample-Statistics.pdf", ArchRProj = projStriata1, addDOC = FALSE, width = 4, height = 4)
+```
+
+#### Plot sample fragment sizes
+
+```{r Sample fragment sizes, warning=FALSE, message=FALSE}
+p1 <- plotFragmentSizes(ArchRProj = projStriata1)
+p1
+```
+
+```{r TSS enrichment, warning=FALSE, message=FALSE}
+p2 <- plotTSSEnrichment(ArchRProj = projStriata1)
+p2
+```
+
+```{r Save PDF of Fragment sizes, eval=FALSE, include=FALSE, warning=FALSE, message=FALSE}
+plotPDF(p1,p2, name = "QC-Sample-FragSizes-TSSProfile.pdf", ArchRProj = projStriata1, addDOC = FALSE, width = 5, height = 5)
+```
+
+```{r Save projStriata1, eval=FALSE, include=FALSE}
+saveArchRProject(ArchRProj = projStriata1, outputDirectory = "Save-ProjStriata1", load = FALSE)
+```
