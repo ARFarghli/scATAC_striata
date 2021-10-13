@@ -1,0 +1,230 @@
+
+           ___      .______        ______  __    __  .______      
+          /   \     |   _  \      /      ||  |  |  | |   _  \     
+         /  ^  \    |  |_)  |    |  ,----'|  |__|  | |  |_)  |    
+        /  /_\  \   |      /     |  |     |   __   | |      /     
+       /  _____  \  |  |\  \\___ |  `----.|  |  |  | |  |\  \\___.
+      /__/     \__\ | _| `._____| \______||__|  |__| | _| `._____|
+    
+Logging With ArchR!
+
+Start Time : 2021-10-12 20:27:54
+
+------- ArchR Info
+
+ArchRThreads = 22
+ArchRGenome = Mm10
+
+------- System Info
+
+Computer OS = unix
+Total Cores = 24
+
+------- Session Info
+
+R version 4.0.5 (2021-03-31)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS Linux 7 (Core)
+
+Matrix products: default
+BLAS:   /programs/R-4.0.5/lib/libRblas.so
+LAPACK: /programs/R-4.0.5/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+ [1] grid      parallel  stats4    stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] uwot_0.1.10                        viridis_0.6.1                      viridisLite_0.4.0                 
+ [4] org.Mm.eg.db_3.12.0                AnnotationDbi_1.52.0               clusterProfiler_3.18.1            
+ [7] forcats_0.5.1                      stringr_1.4.0                      dplyr_1.0.7                       
+[10] purrr_0.3.4                        readr_2.0.2                        tidyr_1.1.4                       
+[13] tibble_3.1.5                       tidyverse_1.3.1                    ggridges_0.5.3                    
+[16] gridExtra_2.3                      nabor_0.5.0                        SeuratObject_4.0.1                
+[19] Seurat_4.0.1                       BSgenome.Mmusculus.UCSC.mm10_1.4.0 BSgenome_1.58.0                   
+[22] rtracklayer_1.50.0                 Biostrings_2.58.0                  XVector_0.30.0                    
+[25] knitr_1.36                         ArchR_1.0.1                        magrittr_2.0.1                    
+[28] rhdf5_2.34.0                       Matrix_1.3-3                       data.table_1.14.2                 
+[31] SummarizedExperiment_1.20.0        Biobase_2.50.0                     GenomicRanges_1.42.0              
+[34] GenomeInfoDb_1.26.7                IRanges_2.24.1                     S4Vectors_0.28.1                  
+[37] BiocGenerics_0.36.1                MatrixGenerics_1.2.1               matrixStats_0.61.0                
+[40] ggplot2_3.3.5                     
+
+loaded via a namespace (and not attached):
+  [1] utf8_1.2.2               reticulate_1.20          tidyselect_1.1.1         RSQLite_2.2.8           
+  [5] htmlwidgets_1.5.4        BiocParallel_1.24.1      Rtsne_0.15               scatterpie_0.1.7        
+  [9] munsell_0.5.0            codetools_0.2-18         ica_1.0-2                future_1.22.1           
+ [13] miniUI_0.1.1.1           withr_2.4.2              GOSemSim_2.16.1          colorspace_2.0-2        
+ [17] rstudioapi_0.13          ROCR_1.0-11              tensor_1.5               DOSE_3.16.0             
+ [21] listenv_0.8.0            labeling_0.4.2           rstan_2.21.2             GenomeInfoDbData_1.2.4  
+ [25] polyclip_1.10-0          bit64_4.0.5              farver_2.1.0             downloader_0.4          
+ [29] parallelly_1.28.1        vctrs_0.3.8              generics_0.1.0           xfun_0.26               
+ [33] R6_2.5.1                 graphlayouts_0.7.1       fgsea_1.16.0             cachem_1.0.6            
+ [37] bitops_1.0-7             rhdf5filters_1.2.1       spatstat.utils_2.2-0     DelayedArray_0.16.3     
+ [41] assertthat_0.2.1         promises_1.2.0.1         scales_1.1.1             ggraph_2.0.5            
+ [45] enrichplot_1.10.2        gtable_0.3.0             Cairo_1.5-12.2           globals_0.14.0          
+ [49] processx_3.5.2           goftest_1.2-2            tidygraph_1.2.0          rlang_0.4.11            
+ [53] splines_4.0.5            lazyeval_0.2.2           spatstat.geom_2.1-0      broom_0.7.9             
+ [57] inline_0.3.19            BiocManager_1.30.16      reshape2_1.4.4           abind_1.4-5             
+ [61] modelr_0.1.8             backports_1.2.1          httpuv_1.6.3             qvalue_2.22.0           
+ [65] tools_4.0.5              ellipsis_0.3.2           spatstat.core_2.1-2      RColorBrewer_1.1-2      
+ [69] Rcpp_1.0.7               plyr_1.8.6               zlibbioc_1.36.0          RCurl_1.98-1.5          
+ [73] ps_1.6.0                 prettyunits_1.1.1        rpart_4.1-15             deldir_0.2-10           
+ [77] pbapply_1.5-0            cowplot_1.1.1            zoo_1.8-9                haven_2.4.3             
+ [81] ggrepel_0.9.1            cluster_2.1.2            fs_1.5.0                 RSpectra_0.16-0         
+ [85] scattermore_0.7          DO.db_2.9                lmtest_0.9-38            reprex_2.0.1            
+ [89] RANN_2.6.1               packrat_0.7.0            fitdistrplus_1.1-6       hms_1.1.1               
+ [93] patchwork_1.1.1          mime_0.12                xtable_1.8-4             XML_3.99-0.8            
+ [97] readxl_1.3.1             compiler_4.0.5           shadowtext_0.0.9         KernSmooth_2.23-20      
+[101] V8_3.4.2                 crayon_1.4.1             StanHeaders_2.21.0-7     htmltools_0.5.2         
+[105] ggfun_0.0.4              mgcv_1.8-35              later_1.3.0              tzdb_0.1.2              
+[109] RcppParallel_5.1.4       lubridate_1.7.10         DBI_1.1.1                tweenr_1.0.2            
+[113] dbplyr_2.1.1             MASS_7.3-54              cli_3.0.1                igraph_1.2.6            
+[117] pkgconfig_2.0.3          rvcheck_0.1.8            GenomicAlignments_1.26.0 plotly_4.9.4.1          
+[121] spatstat.sparse_2.0-0    xml2_1.3.2               rvest_1.0.1              callr_3.7.0             
+[125] digest_0.6.28            sctransform_0.3.2        RcppAnnoy_0.0.19         spatstat.data_2.1-0     
+[129] fastmatch_1.1-3          cellranger_1.1.0         leiden_0.3.7             curl_4.3.2              
+[133] shiny_1.7.1              Rsamtools_2.6.0          gtools_3.9.2             lifecycle_1.0.1         
+[137] nlme_3.1-152             jsonlite_1.7.2           Rhdf5lib_1.12.1          fansi_0.5.0             
+[141] pillar_1.6.3             lattice_0.20-44          loo_2.4.1                GO.db_3.12.1            
+[145] fastmap_1.1.0            httr_1.4.2               pkgbuild_1.2.0           survival_3.2-11         
+[149] glue_1.4.2               png_0.1-7                bit_4.0.4                ggforce_0.3.3           
+[153] stringi_1.7.5            blob_1.2.2               memoise_2.0.0            irlba_2.3.3             
+[157] future.apply_1.7.0      
+
+
+------- Log Info
+
+
+2021-10-12 20:27:56 : addClusters Input-Parameters, Class = list
+
+addClusters Input-Parameters$: length = 1
+                       
+1 function (name)      
+2 .Internal(args(name))
+
+
+addClusters Input-Parameters$input: length = 1
+
+addClusters Input-Parameters$reducedDims: length = 1
+[1] "IterativeLSI"
+
+
+addClusters Input-Parameters$name: length = 1
+[1] "Clusters"
+
+
+addClusters Input-Parameters$sampleCells: length = 0
+NULL
+
+
+addClusters Input-Parameters$seed: length = 1
+[1] 1
+
+
+addClusters Input-Parameters$method: length = 1
+[1] "Seurat"
+
+
+addClusters Input-Parameters$dimsToUse: length = 0
+NULL
+
+
+addClusters Input-Parameters$scaleDims: length = 0
+NULL
+
+
+addClusters Input-Parameters$corCutOff: length = 1
+[1] 0.75
+
+
+addClusters Input-Parameters$knnAssign: length = 1
+[1] 10
+
+
+addClusters Input-Parameters$nOutlier: length = 1
+[1] 5
+
+
+addClusters Input-Parameters$maxClusters: length = 1
+[1] 25
+
+
+addClusters Input-Parameters$testBias: length = 1
+[1] TRUE
+
+
+addClusters Input-Parameters$filterBias: length = 1
+[1] FALSE
+
+
+addClusters Input-Parameters$biasClusters: length = 1
+[1] 0.01
+
+
+addClusters Input-Parameters$biasCol: length = 1
+[1] "nFrags"
+
+
+addClusters Input-Parameters$biasVals: length = 0
+NULL
+
+
+addClusters Input-Parameters$biasQuantiles: length = 2
+[1] 0.05 0.95
+
+
+addClusters Input-Parameters$biasEnrich: length = 1
+[1] 10
+
+
+addClusters Input-Parameters$biasProportion: length = 1
+[1] 0.5
+
+
+addClusters Input-Parameters$biasPval: length = 1
+[1] 0.05
+
+
+addClusters Input-Parameters$nPerm: length = 1
+[1] 500
+
+
+addClusters Input-Parameters$prefix: length = 1
+[1] "C"
+
+
+addClusters Input-Parameters$ArchRProj: length = 0
+NULL
+
+
+addClusters Input-Parameters$verbose: length = 1
+[1] TRUE
+
+
+addClusters Input-Parameters$tstart: length = 0
+NULL
+
+
+addClusters Input-Parameters$force: length = 1
+[1] FALSE
+
+
+addClusters Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-addClusters-3f4f63ad0348-Date-2021-10-12_Time-20-27-54.log"
+
+
+addClusters Input-Parameters$...: length = 1
+[[1]]
+<promise: 0x56036db557b8>
+
+
+
+2021-10-12 20:27:59 : Running Seurats FindClusters (Stuart et al. Cell 2019), 0.049 mins elapsed.
+2021-10-12 20:28:30 : Testing Outlier Clusters, 0.556 mins elapsed.
+2021-10-12 20:28:30 : Assigning Cluster Names to 10 Clusters, 0.556 mins elapsed.
+2021-10-12 20:28:30 : Finished addClusters, 0.559 mins elapsed.

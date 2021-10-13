@@ -1,0 +1,316 @@
+
+           ___      .______        ______  __    __  .______      
+          /   \     |   _  \      /      ||  |  |  | |   _  \     
+         /  ^  \    |  |_)  |    |  ,----'|  |__|  | |  |_)  |    
+        /  /_\  \   |      /     |  |     |   __   | |      /     
+       /  _____  \  |  |\  \\___ |  `----.|  |  |  | |  |\  \\___.
+      /__/     \__\ | _| `._____| \______||__|  |__| | _| `._____|
+    
+Logging With ArchR!
+
+Start Time : 2021-10-12 19:28:16
+
+------- ArchR Info
+
+ArchRThreads = 22
+ArchRGenome = Mm10
+
+------- System Info
+
+Computer OS = unix
+Total Cores = 24
+
+------- Session Info
+
+R version 4.0.5 (2021-03-31)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS Linux 7 (Core)
+
+Matrix products: default
+BLAS:   /programs/R-4.0.5/lib/libRblas.so
+LAPACK: /programs/R-4.0.5/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] BSgenome.Mmusculus.UCSC.mm10_1.4.0 BSgenome_1.58.0                    rtracklayer_1.50.0                
+ [4] Biostrings_2.58.0                  XVector_0.30.0                     knitr_1.36                        
+ [7] ArchR_1.0.1                        magrittr_2.0.1                     rhdf5_2.34.0                      
+[10] Matrix_1.3-3                       data.table_1.14.2                  SummarizedExperiment_1.20.0       
+[13] Biobase_2.50.0                     GenomicRanges_1.42.0               GenomeInfoDb_1.26.7               
+[16] IRanges_2.24.1                     S4Vectors_0.28.1                   BiocGenerics_0.36.1               
+[19] MatrixGenerics_1.2.1               matrixStats_0.61.0                 ggplot2_3.3.5                     
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.1.1         xfun_0.26                purrr_0.3.4              lattice_0.20-44         
+ [5] colorspace_2.0-2         vctrs_0.3.8              generics_0.1.0           XML_3.99-0.8            
+ [9] utf8_1.2.2               rlang_0.4.11             pillar_1.6.3             glue_1.4.2              
+[13] withr_2.4.2              DBI_1.1.1                BiocParallel_1.24.1      GenomeInfoDbData_1.2.4  
+[17] lifecycle_1.0.1          stringr_1.4.0            zlibbioc_1.36.0          munsell_0.5.0           
+[21] gtable_0.3.0             Cairo_1.5-12.2           fansi_0.5.0              Rcpp_1.0.7              
+[25] scales_1.1.1             DelayedArray_0.16.3      Rsamtools_2.6.0          packrat_0.7.0           
+[29] stringi_1.7.5            dplyr_1.0.7              grid_4.0.5               tools_4.0.5             
+[33] bitops_1.0-7             rhdf5filters_1.2.1       RCurl_1.98-1.5           tibble_3.1.5            
+[37] crayon_1.4.1             pkgconfig_2.0.3          ellipsis_0.3.2           assertthat_0.2.1        
+[41] rstudioapi_0.13          Rhdf5lib_1.12.1          R6_2.5.1                 GenomicAlignments_1.26.0
+[45] compiler_4.0.5          
+
+
+------- Log Info
+
+
+2021-10-12 19:28:17 : createArrowFiles Input-Parameters, Class = list
+
+createArrowFiles Input-Parameters$inputFiles: length = 8
+[1] "data/Ctrl1_DEDUP_fragments.bed.gz" "data/Ctrl2_DEDUP_fragments.bed.gz" "data/Ctrl3_DEDUP_fragments.bed.gz"
+[4] "data/Ctrl4_DEDUP_fragments.bed.gz" "data/Mix1_DEDUP_fragments.bed.gz"  "data/Mix2_DEDUP_fragments.bed.gz" 
+
+
+createArrowFiles Input-Parameters$sampleNames: length = 8
+[1] "Ctrl1_DEDUP" "Ctrl2_DEDUP" "Ctrl3_DEDUP" "Ctrl4_DEDUP" "Mix1_DEDUP"  "Mix2_DEDUP" 
+
+
+createArrowFiles Input-Parameters$outputNames: length = 8
+[1] "Ctrl1_DEDUP" "Ctrl2_DEDUP" "Ctrl3_DEDUP" "Ctrl4_DEDUP" "Mix1_DEDUP"  "Mix2_DEDUP" 
+
+
+createArrowFiles Input-Parameters$validBarcodes: length = 0
+NULL
+
+
+createArrowFiles Input-Parameters$minTSS: length = 1
+[1] 4
+
+
+createArrowFiles Input-Parameters$minFrags: length = 1
+[1] 1000
+
+
+createArrowFiles Input-Parameters$maxFrags: length = 1
+[1] 1e+05
+
+
+createArrowFiles Input-Parameters$QCDir: length = 1
+[1] "QualityControl"
+
+
+createArrowFiles Input-Parameters$nucLength: length = 1
+[1] 147
+
+
+createArrowFiles Input-Parameters$promoterRegion: length = 2
+[1] 2000  100
+
+
+createArrowFiles Input-Parameters$excludeChr: length = 1
+[1] "chrM"
+
+
+createArrowFiles Input-Parameters$nChunk: length = 1
+[1] 5
+
+
+createArrowFiles Input-Parameters$bcTag: length = 1
+[1] "qname"
+
+
+createArrowFiles Input-Parameters$gsubExpression: length = 0
+NULL
+
+
+createArrowFiles Input-Parameters$bamFlag: length = 0
+NULL
+
+
+createArrowFiles Input-Parameters$offsetPlus: length = 1
+[1] 4
+
+
+createArrowFiles Input-Parameters$offsetMinus: length = 1
+[1] -5
+
+
+createArrowFiles Input-Parameters$addTileMat: length = 1
+[1] TRUE
+
+
+createArrowFiles Input-Parameters$addGeneScoreMat: length = 1
+[1] TRUE
+
+
+createArrowFiles Input-Parameters$force: length = 1
+[1] FALSE
+
+
+createArrowFiles Input-Parameters$threads: length = 1
+[1] 22
+
+
+createArrowFiles Input-Parameters$parallelParam: length = 0
+NULL
+
+
+createArrowFiles Input-Parameters$subThreading: length = 1
+[1] TRUE
+
+
+createArrowFiles Input-Parameters$verbose: length = 1
+[1] TRUE
+
+
+createArrowFiles Input-Parameters$cleanTmp: length = 1
+[1] TRUE
+
+
+createArrowFiles Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-createArrows-70bdf4542d5-Date-2021-10-12_Time-19-28-16.log"
+
+
+createArrowFiles Input-Parameters$filterFrags: length = 1
+[1] 1000
+
+
+createArrowFiles Input-Parameters$filterTSS: length = 1
+[1] 4
+
+
+
+2021-10-12 19:28:34 : 
+2021-10-12 19:28:34 : Batch Execution w/ safelapply!, 0 mins elapsed.
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Ctrl2_DEDUP.arrow (Ctrl2_DEDUP : 1 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Mix1_DEDUP.arrow (Mix1_DEDUP : 2 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Ctrl4_DEDUP.arrow (Ctrl4_DEDUP : 3 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Mix4_DEDUP.arrow (Mix4_DEDUP : 4 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Ctrl3_DEDUP.arrow (Ctrl3_DEDUP : 5 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Ctrl1_DEDUP.arrow (Ctrl1_DEDUP : 6 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+2021-10-12 19:28:34 : 
+
+2021-10-12 19:28:34 : 
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Mix3_DEDUP.arrow (Mix3_DEDUP : 7 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+2021-10-12 19:28:34 : (Ctrl2_DEDUP : 1 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.004 mins elapsed.
+2021-10-12 19:28:34 : (Mix1_DEDUP : 2 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.004 mins elapsed.
+
+2021-10-12 19:28:34 : 
+
+###########
+2021-10-12 19:28:34 : Creating Arrow File Mix2_DEDUP.arrow (Mix2_DEDUP : 8 of 8)
+###########
+
+
+2021-10-12 19:28:34 : validBC, Class = NULL
+
+validBC: length = 0
+NULL
+
+
+
+2021-10-12 19:28:34 : 
+2021-10-12 19:28:34 : (Ctrl4_DEDUP : 3 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.004 mins elapsed.
+2021-10-12 19:28:34 : (Mix4_DEDUP : 4 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.005 mins elapsed.
+
+2021-10-12 19:28:34 : 
+2021-10-12 19:28:34 : (Ctrl3_DEDUP : 5 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.005 mins elapsed.
+
+2021-10-12 19:28:34 : 
+
+2021-10-12 19:28:34 : 
+2021-10-12 19:28:34 : (Mix3_DEDUP : 7 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.006 mins elapsed.
+2021-10-12 19:28:34 : (Ctrl1_DEDUP : 6 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.006 mins elapsed.
+
+2021-10-12 19:28:34 : 
+2021-10-12 19:28:34 : (Mix2_DEDUP : 8 of 8) Arrow Exists! Marking as completed since force = FALSE!, 0.006 mins elapsed.
+
+------- Completed
+
+End Time : 2021-10-12 19:28:37
+Elapsed Time Minutes = 0.365560122330984
+Elapsed Time Hours = 0.006092902024587
+
+-------
+
+
+

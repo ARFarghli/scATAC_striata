@@ -1,0 +1,203 @@
+
+           ___      .______        ______  __    __  .______      
+          /   \     |   _  \      /      ||  |  |  | |   _  \     
+         /  ^  \    |  |_)  |    |  ,----'|  |__|  | |  |_)  |    
+        /  /_\  \   |      /     |  |     |   __   | |      /     
+       /  _____  \  |  |\  \\___ |  `----.|  |  |  | |  |\  \\___.
+      /__/     \__\ | _| `._____| \______||__|  |__| | _| `._____|
+    
+Logging With ArchR!
+
+Start Time : 2021-10-12 22:21:45
+
+------- ArchR Info
+
+ArchRThreads = 12
+
+------- System Info
+
+Computer OS = unix
+Total Cores = 24
+
+------- Session Info
+
+R version 4.0.5 (2021-03-31)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS Linux 7 (Core)
+
+Matrix products: default
+BLAS:   /programs/R-4.0.5/lib/libRblas.so
+LAPACK: /programs/R-4.0.5/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+ [1] grid      parallel  stats4    stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] gridExtra_2.3               viridis_0.6.1               viridisLite_0.4.0           org.Mm.eg.db_3.12.0        
+ [5] AnnotationDbi_1.52.0        clusterProfiler_3.18.1      forcats_0.5.1               stringr_1.4.0              
+ [9] dplyr_1.0.7                 purrr_0.3.4                 readr_2.0.2                 tidyr_1.1.4                
+[13] tibble_3.1.5                tidyverse_1.3.1             knitr_1.36                  ArchR_1.0.1                
+[17] magrittr_2.0.1              rhdf5_2.34.0                Matrix_1.3-3                data.table_1.14.2          
+[21] SummarizedExperiment_1.20.0 Biobase_2.50.0              GenomicRanges_1.42.0        GenomeInfoDb_1.26.7        
+[25] IRanges_2.24.1              S4Vectors_0.28.1            BiocGenerics_0.36.1         MatrixGenerics_1.2.1       
+[29] matrixStats_0.61.0          ggplot2_3.3.5              
+
+loaded via a namespace (and not attached):
+  [1] fgsea_1.16.0           colorspace_2.0-2       rjson_0.2.20           ellipsis_0.3.2         circlize_0.4.13       
+  [6] qvalue_2.22.0          XVector_0.30.0         GlobalOptions_0.1.2    fs_1.5.0               clue_0.3-59           
+ [11] rstudioapi_0.13        hexbin_1.28.2          farver_2.1.0           graphlayouts_0.7.1     ggrepel_0.9.1         
+ [16] bit64_4.0.5            scatterpie_0.1.7       fansi_0.5.0            lubridate_1.7.10       xml2_1.3.2            
+ [21] splines_4.0.5          cachem_1.0.6           GOSemSim_2.16.1        polyclip_1.10-0        jsonlite_1.7.2        
+ [26] Cairo_1.5-12.2         packrat_0.7.0          broom_0.7.9            cluster_2.1.2          GO.db_3.12.1          
+ [31] dbplyr_2.1.1           png_0.1-7              ggforce_0.3.3          BiocManager_1.30.16    compiler_4.0.5        
+ [36] httr_1.4.2             rvcheck_0.1.8          backports_1.2.1        assertthat_0.2.1       fastmap_1.1.0         
+ [41] cli_3.0.1              tweenr_1.0.2           tools_4.0.5            igraph_1.2.6           gtable_0.3.0          
+ [46] glue_1.4.2             GenomeInfoDbData_1.2.4 reshape2_1.4.4         DO.db_2.9              fastmatch_1.1-3       
+ [51] Rcpp_1.0.7             enrichplot_1.10.2      cellranger_1.1.0       vctrs_0.3.8            rhdf5filters_1.2.1    
+ [56] ggraph_2.0.5           xfun_0.26              rvest_1.0.1            lifecycle_1.0.1        DOSE_3.16.0           
+ [61] MASS_7.3-54            zlibbioc_1.36.0        scales_1.1.1           tidygraph_1.2.0        hms_1.1.1             
+ [66] RColorBrewer_1.1-2     ComplexHeatmap_2.6.2   memoise_2.0.0          ggfun_0.0.4            downloader_0.4        
+ [71] stringi_1.7.5          RSQLite_2.2.8          BiocParallel_1.24.1    shape_1.4.6            rlang_0.4.11          
+ [76] pkgconfig_2.0.3        bitops_1.0-7           lattice_0.20-44        Rhdf5lib_1.12.1        labeling_0.4.2        
+ [81] shadowtext_0.0.9       cowplot_1.1.1          bit_4.0.4              tidyselect_1.1.1       plyr_1.8.6            
+ [86] R6_2.5.1               generics_0.1.0         DelayedArray_0.16.3    DBI_1.1.1              pillar_1.6.3          
+ [91] haven_2.4.3            withr_2.4.2            RCurl_1.98-1.5         modelr_0.1.8           crayon_1.4.1          
+ [96] utf8_1.2.2             tzdb_0.1.2             GetoptLong_1.0.5       readxl_1.3.1           blob_1.2.2            
+[101] reprex_2.0.1           digest_0.6.28          munsell_0.5.0         
+
+
+------- Log Info
+
+
+2021-10-12 22:21:47 : Input-Parameters, Class = list
+
+Input-Parameters$ArchRProj: length = 1
+
+Input-Parameters$embedding: length = 1
+[1] "UMAP"
+
+
+Input-Parameters$colorBy: length = 1
+[1] "GeneScoreMatrix"
+
+
+Input-Parameters$name: length = 10
+[1] "Aqp4"   "Mog"    "Flt1"   "Cx3cr1" "Pdgfra" "Dlx1"  
+
+
+Input-Parameters$log2Norm: length = 0
+NULL
+
+
+Input-Parameters$pal: length = 0
+NULL
+
+
+Input-Parameters$size: length = 1
+[1] 0.1
+
+
+Input-Parameters$sampleCells: length = 0
+NULL
+
+
+Input-Parameters$highlightCells: length = 0
+NULL
+
+
+Input-Parameters$rastr: length = 1
+[1] TRUE
+
+
+Input-Parameters$quantCut: length = 2
+[1] 0.01 0.99
+
+
+Input-Parameters$discreteSet: length = 0
+NULL
+
+
+Input-Parameters$continuousSet: length = 0
+NULL
+
+
+Input-Parameters$randomize: length = 1
+[1] TRUE
+
+
+Input-Parameters$keepAxis: length = 1
+[1] FALSE
+
+
+Input-Parameters$baseSize: length = 1
+[1] 10
+
+
+Input-Parameters$plotAs: length = 0
+NULL
+
+
+Input-Parameters$threads: length = 1
+[1] 12
+
+
+Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-plotEmbedding-714611a59b3c-Date-2021-10-12_Time-22-21-45.log"
+
+
+
+2021-10-12 22:21:47 : 
+
+2021-10-12 22:21:47 : Embedding data.frame, Class = data.frame
+Embedding data.frame: nRows = 10642, nCols = 2
+
+
+
+2021-10-12 22:21:49 : 
+
+2021-10-12 22:21:49 : 
+
+2021-10-12 22:21:51 : FeatureDF, Class = DFrame
+DataFrame with 24367 rows and 6 columns
+      seqnames    start      end  strand    name     idx
+         <Rle>  <array>  <array> <array> <array> <array>
+1         chr1  3671498  3214482       2    Xkr4       1
+2         chr1  4409241  4290846       2     Rp1       2
+3         chr1  4497354  4490928       2   Sox17       3
+4         chr1  4785726  4773198       2  Mrpl15       4
+5         chr1  4807893  4846735       1  Lypla1       5
+...        ...      ...      ...     ...     ...     ...
+24363     chrY 66742170 66739797       2 Gm20852      30
+24364     chrY 78836719 78835721       2 Gm20806      31
+24365     chrY 79149787 79148793       2 Gm20917      32
+24366     chrY 85529519 85528523       2 Gm20854      33
+24367     chrY 90784610 90816465       1   Erdr1      34
+
+
+2021-10-12 22:21:51 : idx, Class = integer
+
+idx: length = 10
+[1]  9924  9385 17248 23216 16378 11897
+
+
+
+2021-10-12 22:21:51 : FeatureDF-Subset, Class = DFrame
+DataFrame with 10 rows and 6 columns
+   seqnames     start       end  strand    name     idx
+      <Rle>   <array>   <array> <array> <array> <array>
+1     chr18  15410982  15389394       2    Aqp4      68
+2     chr17  37023398  37010740       2     Mog     713
+3      chr5 147725988 147562196       2    Flt1    1346
+4      chr9 120068296 120048683       2  Cx3cr1    1278
+5      chr5  75152291  75198204       1  Pdgfra     476
+6      chr2  71529445  71533981       1    Dlx1     644
+7      chr6 116716758 116692725       2  Tmem72     889
+8      chr3  27896368  27866065       2 Tmem212      84
+9      chr2  14229414  14332023       1    Mrc1     110
+10     chr9 111311739 111395775       1  Trank1    1212
+
