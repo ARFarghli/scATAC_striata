@@ -373,7 +373,7 @@ markerGenes  <- c(
     "Trank1" #Neurons
     )
 
-p <- plotEmbedding(
+p10 <- plotEmbedding(
     ArchRProj = projStriata2, 
     colorBy = "GeneScoreMatrix", 
     name = markerGenes, 
@@ -384,7 +384,7 @@ p <- plotEmbedding(
 
 ```{r}
 #Rearrange for grid plotting
-p2 <- lapply(p, function(x){
+p11 <- lapply(p10, function(x){
     x + guides(color = FALSE, fill = FALSE) + 
     theme_ArchR(baseSize = 6.5) +
     theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
@@ -396,6 +396,14 @@ p2 <- lapply(p, function(x){
     )
 })
 do.call(cowplot::plot_grid, c(list(ncol = 3),p2))
+```
+
+```{r, message=FALSE}
+#Save an editable PDF version
+plotPDF(plotList = p10, 
+    name = "Plot-UMAP-Marker-Genes-W-Imputation.pdf", 
+    ArchRProj = projStriata2, 
+    addDOC = FALSE, width = 5, height = 5)
 ```
 
 ```{r All possible marker genes with imputed gene score}
@@ -416,7 +424,7 @@ markerGenes  <- c(
     "Trank1", "Atp1a3" #Neurons
     )
 
-p3 <- plotEmbedding(
+p12 <- plotEmbedding(
     ArchRProj = projStriata2, 
     colorBy = "GeneScoreMatrix", 
     name = markerGenes, 
@@ -426,27 +434,11 @@ p3 <- plotEmbedding(
 ```
 
 ```{r}
-p3$Slc4a5
-plotPDF(plotList = p3, 
+p12$Slc4a5
+plotPDF(plotList = p12, 
     name = "Plot-UMAP-All-Marker-Genes-W-Imputation.pdf", 
     ArchRProj = projStriata2, 
     addDOC = FALSE, width = 5, height = 5)
-```
-
-```{r}
-#Rearrange for grid plotting
-p4 <- lapply(p3, function(x){
-    x + guides(color = FALSE, fill = FALSE) + 
-    theme_ArchR(baseSize = 6.5) +
-    theme(plot.margin = unit(c(0, 0, 0, 0), "cm")) +
-    theme(
-        axis.text.x=element_blank(), 
-        axis.ticks.x=element_blank(), 
-        axis.text.y=element_blank(), 
-        axis.ticks.y=element_blank()
-    )
-})
-do.call(cowplot::plot_grid, c(list(ncol = 3),p4))
 ```
 
 ```{r Tfs and splicing genes}
@@ -456,7 +448,7 @@ markerGenes  <- c(
     "Foxj1" # Ependy cilia
     )
 
-p5 <- plotEmbedding(
+p13 <- plotEmbedding(
     ArchRProj = projStriata2, 
     colorBy = "GeneScoreMatrix", 
     name = markerGenes, 
@@ -466,8 +458,8 @@ p5 <- plotEmbedding(
 ```
 
 ```{r}
-p5$Sox9
-plotPDF(plotList = p5, 
+p13$Sox9
+plotPDF(plotList = p13, 
     name = "Plot-UMAP-TF-Marker-Genes-W-Imputation.pdf", 
     ArchRProj = projStriata2, 
     addDOC = FALSE, width = 5, height = 5)
@@ -539,20 +531,22 @@ png("cc_go.png", height = 10, width = 20, units = "in", res = 600)
 dotplot(cc_go, showCategory = 5) + scale_color_viridis(direction = -1, trans = "log10")
 dev.off() 
 ```
+
 ```{r}
 cc_gos <- clusterProfiler::simplify(cc_go, cutoff=0.05, by= "p.adjust")
 dotplot(cc_gos, showCategory = 5) +scale_color_viridis(direction = -1, trans = "log10")
 ```
+
 ```{r}
 png("cc_gos.png", height = 10, width = 20, units = "in", res = 600)
 dotplot(cc_gos, showCategory = 5) +scale_color_viridis(direction = -1, trans = "log10")
 dev.off() 
 ```
 
-
 ```{r}
-cp <- ddply(projStriata2@cellColData, .(projStriata2@cellColData$Sample, projStriata2@cellColData$Clusters), nrow)
-names(cp) <- c("sample", "cluster", "cells")
+cc.kegg <- clusterProfiler::compareCluster(geneClusters = clusterprofilerlist, 
+                                           fun = "enrichKEGG")
+dotplot(cc.kegg, showCategory = 5)#scale_color_viridis(direction=-1,trans="log10")+
 ```
 
 
