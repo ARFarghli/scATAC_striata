@@ -208,6 +208,7 @@ p6 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
   theme_classic() +
   scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
 )) +ylim(c(0,70))
+
 p6 + ggsave(filename = "proportion_all.png")
 
 p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
