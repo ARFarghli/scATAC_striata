@@ -160,6 +160,12 @@ write.table(x=table(projStriata2.sub$Sample)
 ```{r}
 table(projStriata2.sub$Treatment)
 table(projStriata2.sub$Clusters)
+write.table(table(projStriata2.sub$Treatment), 
+            file = "cells_treatment.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
 d <- data.frame(projStriata2.sub@cellColData)
 aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
 aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
@@ -175,9 +181,8 @@ plotPDF(p4,p5, name = "Plot-UMAP-DoubletEnrichment-TSSEnrichment", ArchRProj = p
 
 ```{r}
 library(plyr)
-cp <- ddply(d, .(d$Sample, d$Clusters), nrow)
-names(cp) <- c("sample", "cluster", "cells")
-names(cp) <- c("sample", "cluster", "cells")
+cp <- ddply(d, .(d$Sample, d$Clusters, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
 
 table(cp$sample) 
 
@@ -218,6 +223,11 @@ p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
   scale_fill_manual(values=c("#BABABA", "#92C5DE"))
 
 p7 + ggsave(filename = "proportions.png") 
+```
+
+```{r Count number of marker genes within each cluster}
+count(scATACmarkers$group_name)
+write.table(count(scATACmarkers$group_name),file = "markerscount.csv", quote=F,sep=",",row.names=F)
 ```
 
 
