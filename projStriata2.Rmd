@@ -204,6 +204,8 @@ cp$cluster <- factor(cp$cluster)
 levels(cp$cluster)
 cp$cluster <- factor(cp$cluster,levels(cp$cluster)[c(1,3,4,5,6,7,8,9,10,2)])
 levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
 ```
 
 ```{r}
@@ -216,13 +218,15 @@ p6 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
 
 p6 + ggsave(filename = "proportion_all.png")
 
+
+
 p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
   geom_boxplot() +
   geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
   theme_classic() +
   scale_fill_manual(values=c("#BABABA", "#92C5DE"))
 
-p7 + ggsave(filename = "proportions.png") 
+p7 + stat_compare_means(aes(group = grouping), method = "t.test", label="p.signif", hide.ns = TRUE) + ggsave(filename = "proportions.png") 
 ```
 
 ```{r Count number of marker genes within each cluster}
