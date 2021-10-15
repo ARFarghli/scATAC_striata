@@ -24,6 +24,7 @@ addArchRThreads(threads = 22)
 
 ```{r Load projStriata1, include=FALSE}
 projStriata1 <- loadArchRProject(path = "./Save-ProjStriata1/")
+projStriata2 <- loadArchRProject(path = "./Save-ProjStriata2/")
 ```
 
 ```{r Filter Doublets, eval=TRUE}
@@ -271,12 +272,13 @@ plotPDF(heatmapGS, name = "GeneScores-Marker-Heatmap", width = 8, height = 6, Ar
 
 ```{r load markers}
 scRNAmarker <- read_csv("mmc3.csv") %>% 
-  dplyr::select(-"...1")
+  dplyr::select(-"...1") %>% 
+  dplyr::rename("type" = "Cell Type")
 
 scATACmarkers <- read_csv("markerlist.csv") %>% 
   dplyr::select("group_name", "name", "Log2FC") %>% 
   dplyr::rename("gene" = "name") %>% 
-  dplyr::rename("Log2FC_atac" = "Log2FC")
+  dplyr::rename("Cluster" = "group_name")
 
 scMarkers <- left_join(scRNAmarker, scATACmarkers, by = "gene") %>% 
   drop_na() %>% 
@@ -479,6 +481,96 @@ plotPDF(plotList = p13,
     ArchRProj = projStriata2, 
     addDOC = FALSE, width = 5, height = 5)
 ```
+
+
+```{r Unbiased bargraph}
+check_haber_percentages.f <- function(SerObj, enrichedGenes_df, haber_goi, FC_thresh = 0, image = T, projname = 'proj', w = NULL, h = NULL, facet_ncol = 5) {
+  
+  ### Loop through each cluster and calculate the percentage of genes from each cell type in that cluster
+  #     above the FC_thresh using the output from finding highly enriched markers of each cluster
+  haber_df <- data.frame()
+  for (i in  sort(unique(projStriata2$Clusters))) {
+    cat(paste0('\nCalculating Haber percentages for cluster ', i, '...'))
+    df_tmp <- enrichedGenes_df %>%
+      filter(Cluster == i) %>%
+      filter(Log2FC > FC_thresh)
+    
+    for (t in unique(sort(haber_goi$type))) {
+      
+      genes_in_t <- haber_goi %>%
+        filter(type == t) %>%
+        pull(gene) %>%
+        unique() %>%
+        as.vector()
+      
+      per <- length(intersect(df_tmp$gene, genes_in_t)) / length(genes_in_t) * 100
+      genes <- intersect(df_tmp$gene, genes_in_t)
+      
+      haber_df <- bind_rows(haber_df, data.frame('Cluster' = i, 'Type' = t, 'Percent' = round(per, 2), 'Overlap_genes' = paste(genes, collapse = '|')))
+    }
+  }
+  cat('\n\n')
+  
+  ### Refactor cluster so appear in numberical order
+  haber_df <- haber_df %>%
+    mutate(Cluster = factor(Cluster, levels = unique(Cluster)))
+  
+  ### Create a bar plot to show the percent cell type cells present in each cluster
+  if (image == T) {
+    
+    haber_df_tmp <- haber_df %>%
+      filter(Type != "EntProgEarly")
+    
+    filename = paste0(projname, '_FC', FC_thresh, '.png')
+    print(paste0('Saving percent image as: ', filename))
+    
+    
+    # Determine width and height
+    if (is.null(w)) {
+      w = min(10, length(unique(haber_df_tmp$Cluster)) * 1.75 + 3)
+    }
+    
+    if (is.null(h)) {
+      h = max(3, 2 * ceiling(length(unique(haber_df_tmp$Cluster)) / 5))
+    }
+    
+    # Plot
+    print(ggplot(haber_df_tmp, aes(Type, Percent, alpha = Percent)) +
+      geom_bar(stat = 'identity', color = 'black') +
+      facet_wrap(~Cluster, ncol = facet_ncol, scales = 'free_y') +
+      scale_x_discrete(NULL) +
+      theme_bw() +
+      theme(text = element_text(size = 20),
+            
+            axis.title = element_text(size = 18, face = 'bold'),
+            axis.text.y = element_text(size = 16, color = 'black'),
+            axis.text.x = element_text(size = 16, color = 'black', angle = 90, hjust = 1, vjust = .5),
+            
+            strip.text = element_text(face = 'bold'),
+            
+            panel.grid = element_blank()) +
+      ggsave(filename, width = w, height = h))
+  }
+  
+  ### Reformat the dataframe to be easier to read, write to csv, and return
+  haber_df <- haber_df %>%
+    select(Cell_Type = Type, everything()) 
+  
+  haber_df %>%
+    write_csv(paste0(projname, '_FC', FC_thresh, '.csv'))
+  
+  return(haber_df)
+}
+
+```
+
+```{r}
+per_cell_FC.5 <- check_haber_percentages.f(projStriata2, 
+                                           scATACmarkers,
+                                           scRNAmarker, 
+                                           FC_thresh = .5)
+```
+
 
 
 ### GO and KEGG analysis
