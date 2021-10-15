@@ -282,8 +282,8 @@ scATACmarkers <- read_csv("markerlist.csv") %>%
 
 scMarkers <- left_join(scRNAmarker, scATACmarkers, by = "gene") %>% 
   drop_na() %>% 
-  group_by(group_name) %>% 
-  arrange(desc(Log2FC_atac))
+  group_by(Cluster) %>% 
+  arrange(desc(Log2FC))
 ```
 
 
@@ -438,7 +438,8 @@ markerGenes  <- c(
     "Tmem72", "Prlr", "Slc4a5", #Ependy sec
     "Tmem212", #Ependy cilia
     "Mrc1", #Immune cells
-    "Trank1", "Atp1a3" #Neurons
+    "Trank1", "Atp1a3", #Neurons
+    "Scara3", "Slc1a2", "Cyp2j9" #C5 Astrocyte
     )
 
 p12 <- plotEmbedding(
