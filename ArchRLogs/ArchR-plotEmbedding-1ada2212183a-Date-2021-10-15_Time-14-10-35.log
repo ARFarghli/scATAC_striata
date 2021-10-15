@@ -1,0 +1,218 @@
+
+           ___      .______        ______  __    __  .______      
+          /   \     |   _  \      /      ||  |  |  | |   _  \     
+         /  ^  \    |  |_)  |    |  ,----'|  |__|  | |  |_)  |    
+        /  /_\  \   |      /     |  |     |   __   | |      /     
+       /  _____  \  |  |\  \\___ |  `----.|  |  |  | |  |\  \\___.
+      /__/     \__\ | _| `._____| \______||__|  |__| | _| `._____|
+    
+Logging With ArchR!
+
+Start Time : 2021-10-15 14:11:09
+
+------- ArchR Info
+
+ArchRThreads = 12
+
+------- System Info
+
+Computer OS = unix
+Total Cores = 24
+
+------- Session Info
+
+R version 4.0.5 (2021-03-31)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS Linux 7 (Core)
+
+Matrix products: default
+BLAS:   /programs/R-4.0.5/lib/libRblas.so
+LAPACK: /programs/R-4.0.5/lib/libRlapack.so
+
+Random number generation:
+ RNG:     Mersenne-Twister 
+ Normal:  Inversion 
+ Sample:  Rounding 
+ 
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] ggpubr_0.4.0                viridis_0.6.1               viridisLite_0.4.0           org.Mm.eg.db_3.12.0        
+ [5] AnnotationDbi_1.52.0        clusterProfiler_3.18.1      forcats_0.5.1               stringr_1.4.0              
+ [9] dplyr_1.0.7                 purrr_0.3.4                 readr_2.0.2                 tidyr_1.1.4                
+[13] tibble_3.1.5                tidyverse_1.3.1             knitr_1.36                  ArchR_1.0.1                
+[17] magrittr_2.0.1              rhdf5_2.34.0                Matrix_1.3-3                data.table_1.14.2          
+[21] SummarizedExperiment_1.20.0 Biobase_2.50.0              GenomicRanges_1.42.0        GenomeInfoDb_1.26.7        
+[25] IRanges_2.24.1              S4Vectors_0.28.1            BiocGenerics_0.36.1         MatrixGenerics_1.2.1       
+[29] matrixStats_0.61.0          ggplot2_3.3.5              
+
+loaded via a namespace (and not attached):
+  [1] shadowtext_0.0.9       readxl_1.3.1           backports_1.2.1        circlize_0.4.13        fastmatch_1.1-3       
+  [6] systemfonts_1.0.2      plyr_1.8.6             igraph_1.2.6           splines_4.0.5          BiocParallel_1.24.1   
+ [11] inline_0.3.19          digest_0.6.28          GOSemSim_2.16.1        GO.db_3.12.1           fansi_0.5.0           
+ [16] memoise_2.0.0          cluster_2.1.2          openxlsx_4.2.3         tzdb_0.1.2             ComplexHeatmap_2.6.2  
+ [21] graphlayouts_0.7.1     modelr_0.1.8           RcppParallel_5.1.4     enrichplot_1.10.2      prettyunits_1.1.1     
+ [26] colorspace_2.0-2       blob_1.2.2             rvest_1.0.1            ggrepel_0.9.1          textshaping_0.3.4     
+ [31] haven_2.4.3            xfun_0.26              callr_3.7.0            crayon_1.4.1           RCurl_1.98-1.5        
+ [36] jsonlite_1.7.2         scatterpie_0.1.7       glue_1.4.2             polyclip_1.10-0        gtable_0.3.0          
+ [41] zlibbioc_1.36.0        XVector_0.30.0         GetoptLong_1.0.5       DelayedArray_0.16.3    V8_3.4.2              
+ [46] car_3.0-10             pkgbuild_1.2.0         Rhdf5lib_1.12.1        rstan_2.21.2           shape_1.4.6           
+ [51] abind_1.4-5            scales_1.1.1           DOSE_3.16.0            DBI_1.1.1              rstatix_0.7.0         
+ [56] Rcpp_1.0.7             clue_0.3-59            foreign_0.8-81         bit_4.0.4              StanHeaders_2.21.0-7  
+ [61] httr_1.4.2             fgsea_1.16.0           RColorBrewer_1.1-2     ellipsis_0.3.2         pkgconfig_2.0.3       
+ [66] loo_2.4.1              farver_2.1.0           dbplyr_2.1.1           utf8_1.2.2             labeling_0.4.2        
+ [71] tidyselect_1.1.1       rlang_0.4.11           reshape2_1.4.4         munsell_0.5.0          cellranger_1.1.0      
+ [76] tools_4.0.5            cachem_1.0.6           downloader_0.4         cli_3.0.1              generics_0.1.0        
+ [81] RSQLite_2.2.8          broom_0.7.9            ggridges_0.5.3         fastmap_1.1.0          ragg_1.1.2            
+ [86] processx_3.5.2         bit64_4.0.5            fs_1.5.0               tidygraph_1.2.0        zip_2.2.0             
+ [91] ggraph_2.0.5           packrat_0.7.0          DO.db_2.9              xml2_1.3.2             compiler_4.0.5        
+ [96] rstudioapi_0.13        curl_4.3.2             png_0.1-7              ggsignif_0.6.1         reprex_2.0.1          
+[101] tweenr_1.0.2           stringi_1.7.5          ps_1.6.0               lattice_0.20-44        vctrs_0.3.8           
+[106] pillar_1.6.3           lifecycle_1.0.1        rhdf5filters_1.2.1     BiocManager_1.30.16    GlobalOptions_0.1.2   
+[111] cowplot_1.1.1          bitops_1.0-7           qvalue_2.22.0          R6_2.5.1               rio_0.5.26            
+[116] gridExtra_2.3          codetools_0.2-18       MASS_7.3-54            assertthat_0.2.1       rjson_0.2.20          
+[121] withr_2.4.2            GenomeInfoDbData_1.2.4 hms_1.1.1              ggfun_0.0.4            grid_4.0.5            
+[126] rvcheck_0.1.8          carData_3.0-4          Cairo_1.5-12.2         ggforce_0.3.3          lubridate_1.7.10      
+
+
+------- Log Info
+
+
+2021-10-15 14:11:10 : Input-Parameters, Class = list
+
+Input-Parameters$ArchRProj: length = 1
+
+Input-Parameters$embedding: length = 1
+[1] "UMAP"
+
+
+Input-Parameters$colorBy: length = 1
+[1] "GeneScoreMatrix"
+
+
+Input-Parameters$name: length = 22
+[1] "Aqp4"  "Gjb6"  "Mog"   "Aspa"  "Nfasc" "Klk6" 
+
+
+Input-Parameters$log2Norm: length = 0
+NULL
+
+
+Input-Parameters$imputeWeights: length = 0
+NULL
+
+
+Input-Parameters$pal: length = 0
+NULL
+
+
+Input-Parameters$size: length = 1
+[1] 0.1
+
+
+Input-Parameters$sampleCells: length = 0
+NULL
+
+
+Input-Parameters$highlightCells: length = 0
+NULL
+
+
+Input-Parameters$rastr: length = 1
+[1] TRUE
+
+
+Input-Parameters$quantCut: length = 2
+[1] 0.01 0.99
+
+
+Input-Parameters$discreteSet: length = 0
+NULL
+
+
+Input-Parameters$continuousSet: length = 0
+NULL
+
+
+Input-Parameters$randomize: length = 1
+[1] TRUE
+
+
+Input-Parameters$keepAxis: length = 1
+[1] FALSE
+
+
+Input-Parameters$baseSize: length = 1
+[1] 10
+
+
+Input-Parameters$plotAs: length = 0
+NULL
+
+
+Input-Parameters$threads: length = 1
+[1] 12
+
+
+Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-plotEmbedding-1ada2212183a-Date-2021-10-15_Time-14-10-35.log"
+
+
+
+2021-10-15 14:11:10 : 
+
+2021-10-15 14:11:10 : Embedding data.frame, Class = data.frame
+Embedding data.frame: nRows = 10642, nCols = 2
+
+
+
+2021-10-15 14:11:15 : 
+
+2021-10-15 14:11:15 : 
+
+2021-10-15 14:11:16 : FeatureDF, Class = DFrame
+DataFrame with 24367 rows and 6 columns
+      seqnames    start      end  strand    name     idx
+         <Rle>  <array>  <array> <array> <array> <array>
+1         chr1  3671498  3214482       2    Xkr4       1
+2         chr1  4409241  4290846       2     Rp1       2
+3         chr1  4497354  4490928       2   Sox17       3
+4         chr1  4785726  4773198       2  Mrpl15       4
+5         chr1  4807893  4846735       1  Lypla1       5
+...        ...      ...      ...     ...     ...     ...
+24363     chrY 66742170 66739797       2 Gm20852      30
+24364     chrY 78836719 78835721       2 Gm20806      31
+24365     chrY 79149787 79148793       2 Gm20917      32
+24366     chrY 85529519 85528523       2 Gm20854      33
+24367     chrY 90784610 90816465       1   Erdr1      34
+
+
+2021-10-15 14:11:16 : idx, Class = integer
+
+idx: length = 22
+[1]  9924  6640  9385  3316   788 19413
+
+
+
+2021-10-15 14:11:16 : FeatureDF-Subset, Class = DFrame
+DataFrame with 22 rows and 6 columns
+    seqnames     start       end  strand    name     idx
+       <Rle>   <array>   <array> <array> <array> <array>
+1      chr18  15410982  15389394       2    Aqp4      68
+2      chr14  57133611  57123301       2    Gjb6     526
+3      chr17  37023398  37010740       2     Mog     713
+4      chr11  73324637  73304988       2    Aspa     811
+5       chr1 132741797 132564690       2   Nfasc     788
+...      ...       ...       ...     ...     ...     ...
+18      chr6  83237375  83304945       1  Slc4a5     596
+19      chr3  27896368  27866065       2 Tmem212      84
+20      chr2  14229414  14332023       1    Mrc1     110
+21      chr9 111311739 111395775       1  Trank1    1212
+22      chr7  25005937  24978167       2  Atp1a3     471
+

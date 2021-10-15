@@ -1,0 +1,462 @@
+
+           ___      .______        ______  __    __  .______      
+          /   \     |   _  \      /      ||  |  |  | |   _  \     
+         /  ^  \    |  |_)  |    |  ,----'|  |__|  | |  |_)  |    
+        /  /_\  \   |      /     |  |     |   __   | |      /     
+       /  _____  \  |  |\  \\___ |  `----.|  |  |  | |  |\  \\___.
+      /__/     \__\ | _| `._____| \______||__|  |__| | _| `._____|
+    
+Logging With ArchR!
+
+Start Time : 2021-10-13 15:46:04
+
+------- ArchR Info
+
+ArchRThreads = 22
+
+------- System Info
+
+Computer OS = unix
+Total Cores = 24
+
+------- Session Info
+
+R version 4.0.5 (2021-03-31)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: CentOS Linux 7 (Core)
+
+Matrix products: default
+BLAS:   /programs/R-4.0.5/lib/libRblas.so
+LAPACK: /programs/R-4.0.5/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C               LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8    LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C             LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] plyr_1.8.6                  viridis_0.6.1               viridisLite_0.4.0           org.Mm.eg.db_3.12.0        
+ [5] AnnotationDbi_1.52.0        clusterProfiler_3.18.1      forcats_0.5.1               stringr_1.4.0              
+ [9] dplyr_1.0.7                 purrr_0.3.4                 readr_2.0.2                 tidyr_1.1.4                
+[13] tibble_3.1.5                tidyverse_1.3.1             knitr_1.36                  ArchR_1.0.1                
+[17] magrittr_2.0.1              rhdf5_2.34.0                Matrix_1.3-3                data.table_1.14.2          
+[21] SummarizedExperiment_1.20.0 Biobase_2.50.0              GenomicRanges_1.42.0        GenomeInfoDb_1.26.7        
+[25] IRanges_2.24.1              S4Vectors_0.28.1            BiocGenerics_0.36.1         MatrixGenerics_1.2.1       
+[29] matrixStats_0.61.0          ggplot2_3.3.5              
+
+loaded via a namespace (and not attached):
+  [1] readxl_1.3.1           shadowtext_0.0.9       backports_1.2.1        circlize_0.4.13        fastmatch_1.1-3       
+  [6] systemfonts_1.0.2      igraph_1.2.6           splines_4.0.5          BiocParallel_1.24.1    inline_0.3.19         
+ [11] digest_0.6.28          GOSemSim_2.16.1        GO.db_3.12.1           fansi_0.5.0            memoise_2.0.0         
+ [16] cluster_2.1.2          tzdb_0.1.2             ComplexHeatmap_2.6.2   graphlayouts_0.7.1     modelr_0.1.8          
+ [21] RcppParallel_5.1.4     vroom_1.5.5            prettyunits_1.1.1      enrichplot_1.10.2      colorspace_2.0-2      
+ [26] blob_1.2.2             rvest_1.0.1            ggrepel_0.9.1          textshaping_0.3.4      haven_2.4.3           
+ [31] xfun_0.26              callr_3.7.0            crayon_1.4.1           RCurl_1.98-1.5         jsonlite_1.7.2        
+ [36] scatterpie_0.1.7       glue_1.4.2             polyclip_1.10-0        gtable_0.3.0           zlibbioc_1.36.0       
+ [41] XVector_0.30.0         V8_3.4.2               GetoptLong_1.0.5       DelayedArray_0.16.3    pkgbuild_1.2.0        
+ [46] rstan_2.21.2           Rhdf5lib_1.12.1        shape_1.4.6            scales_1.1.1           DOSE_3.16.0           
+ [51] DBI_1.1.1              Rcpp_1.0.7             clue_0.3-59            bit_4.0.4              StanHeaders_2.21.0-7  
+ [56] httr_1.4.2             fgsea_1.16.0           RColorBrewer_1.1-2     ellipsis_0.3.2         loo_2.4.1             
+ [61] pkgconfig_2.0.3        farver_2.1.0           dbplyr_2.1.1           utf8_1.2.2             labeling_0.4.2        
+ [66] tidyselect_1.1.1       rlang_0.4.11           reshape2_1.4.4         munsell_0.5.0          cellranger_1.1.0      
+ [71] tools_4.0.5            cachem_1.0.6           downloader_0.4         cli_3.0.1              generics_0.1.0        
+ [76] RSQLite_2.2.8          broom_0.7.9            fastmap_1.1.0          ragg_1.1.2             processx_3.5.2        
+ [81] bit64_4.0.5            fs_1.5.0               tidygraph_1.2.0        ggraph_2.0.5           packrat_0.7.0         
+ [86] DO.db_2.9              xml2_1.3.2             compiler_4.0.5         rstudioapi_0.13        curl_4.3.2            
+ [91] png_0.1-7              reprex_2.0.1           tweenr_1.0.2           stringi_1.7.5          ps_1.6.0              
+ [96] lattice_0.20-44        vctrs_0.3.8            pillar_1.6.3           lifecycle_1.0.1        rhdf5filters_1.2.1    
+[101] BiocManager_1.30.16    GlobalOptions_0.1.2    cowplot_1.1.1          bitops_1.0-7           qvalue_2.22.0         
+[106] R6_2.5.1               gridExtra_2.3          codetools_0.2-18       MASS_7.3-54            assertthat_0.2.1      
+[111] rjson_0.2.20           withr_2.4.2            GenomeInfoDbData_1.2.4 hms_1.1.1              grid_4.0.5            
+[116] ggfun_0.0.4            rvcheck_0.1.8          Cairo_1.5-12.2         ggforce_0.3.3          lubridate_1.7.10      
+
+
+------- Log Info
+
+
+2021-10-13 15:46:05 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Ctrl2_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Ctrl2_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:46:07 : Reading Chr 1 of 21, 0.038 mins elapsed.
+2021-10-13 15:46:08 : Reading Chr 2 of 21, 0.052 mins elapsed.
+2021-10-13 15:46:09 : Reading Chr 3 of 21, 0.071 mins elapsed.
+2021-10-13 15:46:10 : Reading Chr 4 of 21, 0.086 mins elapsed.
+2021-10-13 15:46:10 : Reading Chr 5 of 21, 0.094 mins elapsed.
+2021-10-13 15:46:11 : Reading Chr 6 of 21, 0.103 mins elapsed.
+2021-10-13 15:46:11 : Reading Chr 7 of 21, 0.111 mins elapsed.
+2021-10-13 15:46:12 : Reading Chr 8 of 21, 0.119 mins elapsed.
+2021-10-13 15:46:12 : Reading Chr 9 of 21, 0.127 mins elapsed.
+2021-10-13 15:46:13 : Reading Chr 10 of 21, 0.135 mins elapsed.
+2021-10-13 15:46:13 : Reading Chr 11 of 21, 0.142 mins elapsed.
+2021-10-13 15:46:14 : Reading Chr 12 of 21, 0.15 mins elapsed.
+2021-10-13 15:46:14 : Reading Chr 13 of 21, 0.159 mins elapsed.
+2021-10-13 15:46:15 : Reading Chr 14 of 21, 0.171 mins elapsed.
+2021-10-13 15:46:16 : Reading Chr 15 of 21, 0.179 mins elapsed.
+2021-10-13 15:46:16 : Reading Chr 16 of 21, 0.188 mins elapsed.
+2021-10-13 15:46:17 : Reading Chr 17 of 21, 0.196 mins elapsed.
+2021-10-13 15:46:17 : Reading Chr 18 of 21, 0.204 mins elapsed.
+2021-10-13 15:46:17 : Reading Chr 19 of 21, 0.211 mins elapsed.
+2021-10-13 15:46:18 : Reading Chr 20 of 21, 0.22 mins elapsed.
+2021-10-13 15:46:19 : Reading Chr 21 of 21, 0.231 mins elapsed.
+###########
+2021-10-13 15:46:19 : Merging, 0.233 mins elapsed.
+###########
+
+2021-10-13 15:46:23 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Mix1_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Mix1_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:46:26 : Reading Chr 1 of 21, 0.046 mins elapsed.
+2021-10-13 15:46:27 : Reading Chr 2 of 21, 0.057 mins elapsed.
+2021-10-13 15:46:27 : Reading Chr 3 of 21, 0.071 mins elapsed.
+2021-10-13 15:46:28 : Reading Chr 4 of 21, 0.08 mins elapsed.
+2021-10-13 15:46:28 : Reading Chr 5 of 21, 0.087 mins elapsed.
+2021-10-13 15:46:29 : Reading Chr 6 of 21, 0.097 mins elapsed.
+2021-10-13 15:46:29 : Reading Chr 7 of 21, 0.101 mins elapsed.
+2021-10-13 15:46:30 : Reading Chr 8 of 21, 0.107 mins elapsed.
+2021-10-13 15:46:30 : Reading Chr 9 of 21, 0.122 mins elapsed.
+2021-10-13 15:46:31 : Reading Chr 10 of 21, 0.126 mins elapsed.
+2021-10-13 15:46:31 : Reading Chr 11 of 21, 0.133 mins elapsed.
+2021-10-13 15:46:31 : Reading Chr 12 of 21, 0.139 mins elapsed.
+2021-10-13 15:46:32 : Reading Chr 13 of 21, 0.143 mins elapsed.
+2021-10-13 15:46:32 : Reading Chr 14 of 21, 0.15 mins elapsed.
+2021-10-13 15:46:33 : Reading Chr 15 of 21, 0.157 mins elapsed.
+2021-10-13 15:46:33 : Reading Chr 16 of 21, 0.165 mins elapsed.
+2021-10-13 15:46:33 : Reading Chr 17 of 21, 0.172 mins elapsed.
+2021-10-13 15:46:34 : Reading Chr 18 of 21, 0.18 mins elapsed.
+2021-10-13 15:46:34 : Reading Chr 19 of 21, 0.188 mins elapsed.
+2021-10-13 15:46:35 : Reading Chr 20 of 21, 0.198 mins elapsed.
+2021-10-13 15:46:35 : Reading Chr 21 of 21, 0.205 mins elapsed.
+###########
+2021-10-13 15:46:36 : Merging, 0.211 mins elapsed.
+###########
+
+2021-10-13 15:46:37 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Ctrl4_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Ctrl4_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:46:39 : Reading Chr 1 of 21, 0.027 mins elapsed.
+2021-10-13 15:46:40 : Reading Chr 2 of 21, 0.039 mins elapsed.
+2021-10-13 15:46:40 : Reading Chr 3 of 21, 0.052 mins elapsed.
+2021-10-13 15:46:41 : Reading Chr 4 of 21, 0.06 mins elapsed.
+2021-10-13 15:46:41 : Reading Chr 5 of 21, 0.063 mins elapsed.
+2021-10-13 15:46:42 : Reading Chr 6 of 21, 0.073 mins elapsed.
+2021-10-13 15:46:42 : Reading Chr 7 of 21, 0.08 mins elapsed.
+2021-10-13 15:46:42 : Reading Chr 8 of 21, 0.083 mins elapsed.
+2021-10-13 15:46:43 : Reading Chr 9 of 21, 0.089 mins elapsed.
+2021-10-13 15:46:43 : Reading Chr 10 of 21, 0.097 mins elapsed.
+2021-10-13 15:46:43 : Reading Chr 11 of 21, 0.105 mins elapsed.
+2021-10-13 15:46:44 : Reading Chr 12 of 21, 0.108 mins elapsed.
+2021-10-13 15:46:44 : Reading Chr 13 of 21, 0.116 mins elapsed.
+2021-10-13 15:46:45 : Reading Chr 14 of 21, 0.125 mins elapsed.
+2021-10-13 15:46:45 : Reading Chr 15 of 21, 0.132 mins elapsed.
+2021-10-13 15:46:45 : Reading Chr 16 of 21, 0.138 mins elapsed.
+2021-10-13 15:46:46 : Reading Chr 17 of 21, 0.141 mins elapsed.
+2021-10-13 15:46:46 : Reading Chr 18 of 21, 0.149 mins elapsed.
+2021-10-13 15:46:47 : Reading Chr 19 of 21, 0.155 mins elapsed.
+2021-10-13 15:46:47 : Reading Chr 20 of 21, 0.158 mins elapsed.
+2021-10-13 15:46:47 : Reading Chr 21 of 21, 0.169 mins elapsed.
+###########
+2021-10-13 15:46:48 : Merging, 0.175 mins elapsed.
+###########
+
+2021-10-13 15:46:49 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Mix4_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Mix4_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:46:51 : Reading Chr 1 of 21, 0.038 mins elapsed.
+2021-10-13 15:46:52 : Reading Chr 2 of 21, 0.047 mins elapsed.
+2021-10-13 15:46:52 : Reading Chr 3 of 21, 0.061 mins elapsed.
+2021-10-13 15:46:53 : Reading Chr 4 of 21, 0.064 mins elapsed.
+2021-10-13 15:46:53 : Reading Chr 5 of 21, 0.071 mins elapsed.
+2021-10-13 15:46:53 : Reading Chr 6 of 21, 0.077 mins elapsed.
+2021-10-13 15:46:54 : Reading Chr 7 of 21, 0.08 mins elapsed.
+2021-10-13 15:46:54 : Reading Chr 8 of 21, 0.088 mins elapsed.
+2021-10-13 15:46:54 : Reading Chr 9 of 21, 0.094 mins elapsed.
+2021-10-13 15:46:55 : Reading Chr 10 of 21, 0.104 mins elapsed.
+2021-10-13 15:46:55 : Reading Chr 11 of 21, 0.11 mins elapsed.
+2021-10-13 15:46:56 : Reading Chr 12 of 21, 0.117 mins elapsed.
+2021-10-13 15:46:56 : Reading Chr 13 of 21, 0.124 mins elapsed.
+2021-10-13 15:46:56 : Reading Chr 14 of 21, 0.127 mins elapsed.
+2021-10-13 15:46:57 : Reading Chr 15 of 21, 0.14 mins elapsed.
+2021-10-13 15:46:57 : Reading Chr 16 of 21, 0.143 mins elapsed.
+2021-10-13 15:46:58 : Reading Chr 17 of 21, 0.149 mins elapsed.
+2021-10-13 15:46:58 : Reading Chr 18 of 21, 0.153 mins elapsed.
+2021-10-13 15:46:59 : Reading Chr 19 of 21, 0.164 mins elapsed.
+2021-10-13 15:46:59 : Reading Chr 20 of 21, 0.171 mins elapsed.
+2021-10-13 15:47:00 : Reading Chr 21 of 21, 0.177 mins elapsed.
+###########
+2021-10-13 15:47:00 : Merging, 0.18 mins elapsed.
+###########
+
+2021-10-13 15:47:02 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Ctrl3_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Ctrl3_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:47:04 : Reading Chr 1 of 21, 0.027 mins elapsed.
+2021-10-13 15:47:05 : Reading Chr 2 of 21, 0.042 mins elapsed.
+2021-10-13 15:47:06 : Reading Chr 3 of 21, 0.058 mins elapsed.
+2021-10-13 15:47:06 : Reading Chr 4 of 21, 0.065 mins elapsed.
+2021-10-13 15:47:07 : Reading Chr 5 of 21, 0.067 mins elapsed.
+2021-10-13 15:47:07 : Reading Chr 6 of 21, 0.08 mins elapsed.
+2021-10-13 15:47:07 : Reading Chr 7 of 21, 0.083 mins elapsed.
+2021-10-13 15:47:08 : Reading Chr 8 of 21, 0.092 mins elapsed.
+2021-10-13 15:47:08 : Reading Chr 9 of 21, 0.095 mins elapsed.
+2021-10-13 15:47:09 : Reading Chr 10 of 21, 0.101 mins elapsed.
+2021-10-13 15:47:09 : Reading Chr 11 of 21, 0.104 mins elapsed.
+2021-10-13 15:47:09 : Reading Chr 12 of 21, 0.111 mins elapsed.
+2021-10-13 15:47:10 : Reading Chr 13 of 21, 0.118 mins elapsed.
+2021-10-13 15:47:10 : Reading Chr 14 of 21, 0.121 mins elapsed.
+2021-10-13 15:47:10 : Reading Chr 15 of 21, 0.128 mins elapsed.
+2021-10-13 15:47:11 : Reading Chr 16 of 21, 0.138 mins elapsed.
+2021-10-13 15:47:11 : Reading Chr 17 of 21, 0.142 mins elapsed.
+2021-10-13 15:47:11 : Reading Chr 18 of 21, 0.148 mins elapsed.
+2021-10-13 15:47:12 : Reading Chr 19 of 21, 0.151 mins elapsed.
+2021-10-13 15:47:12 : Reading Chr 20 of 21, 0.163 mins elapsed.
+2021-10-13 15:47:12 : Reading Chr 21 of 21, 0.166 mins elapsed.
+###########
+2021-10-13 15:47:13 : Merging, 0.172 mins elapsed.
+###########
+
+2021-10-13 15:47:14 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Ctrl1_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Ctrl1_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:47:16 : Reading Chr 1 of 21, 0.024 mins elapsed.
+2021-10-13 15:47:16 : Reading Chr 2 of 21, 0.034 mins elapsed.
+2021-10-13 15:47:17 : Reading Chr 3 of 21, 0.047 mins elapsed.
+2021-10-13 15:47:17 : Reading Chr 4 of 21, 0.055 mins elapsed.
+2021-10-13 15:47:18 : Reading Chr 5 of 21, 0.062 mins elapsed.
+2021-10-13 15:47:18 : Reading Chr 6 of 21, 0.065 mins elapsed.
+2021-10-13 15:47:18 : Reading Chr 7 of 21, 0.072 mins elapsed.
+2021-10-13 15:47:19 : Reading Chr 8 of 21, 0.074 mins elapsed.
+2021-10-13 15:47:19 : Reading Chr 9 of 21, 0.085 mins elapsed.
+2021-10-13 15:47:20 : Reading Chr 10 of 21, 0.09 mins elapsed.
+2021-10-13 15:47:20 : Reading Chr 11 of 21, 0.097 mins elapsed.
+2021-10-13 15:47:20 : Reading Chr 12 of 21, 0.1 mins elapsed.
+2021-10-13 15:47:21 : Reading Chr 13 of 21, 0.11 mins elapsed.
+2021-10-13 15:47:21 : Reading Chr 14 of 21, 0.118 mins elapsed.
+2021-10-13 15:47:22 : Reading Chr 15 of 21, 0.124 mins elapsed.
+2021-10-13 15:47:22 : Reading Chr 16 of 21, 0.131 mins elapsed.
+2021-10-13 15:47:22 : Reading Chr 17 of 21, 0.138 mins elapsed.
+2021-10-13 15:47:23 : Reading Chr 18 of 21, 0.141 mins elapsed.
+2021-10-13 15:47:23 : Reading Chr 19 of 21, 0.152 mins elapsed.
+2021-10-13 15:47:24 : Reading Chr 20 of 21, 0.158 mins elapsed.
+2021-10-13 15:47:24 : Reading Chr 21 of 21, 0.161 mins elapsed.
+###########
+2021-10-13 15:47:24 : Merging, 0.168 mins elapsed.
+###########
+
+2021-10-13 15:47:25 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Mix3_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Mix3_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:47:27 : Reading Chr 1 of 21, 0.034 mins elapsed.
+2021-10-13 15:47:28 : Reading Chr 2 of 21, 0.042 mins elapsed.
+2021-10-13 15:47:29 : Reading Chr 3 of 21, 0.059 mins elapsed.
+2021-10-13 15:47:29 : Reading Chr 4 of 21, 0.066 mins elapsed.
+2021-10-13 15:47:29 : Reading Chr 5 of 21, 0.069 mins elapsed.
+2021-10-13 15:47:30 : Reading Chr 6 of 21, 0.081 mins elapsed.
+2021-10-13 15:47:30 : Reading Chr 7 of 21, 0.084 mins elapsed.
+2021-10-13 15:47:31 : Reading Chr 8 of 21, 0.093 mins elapsed.
+2021-10-13 15:47:31 : Reading Chr 9 of 21, 0.1 mins elapsed.
+2021-10-13 15:47:32 : Reading Chr 10 of 21, 0.106 mins elapsed.
+2021-10-13 15:47:32 : Reading Chr 11 of 21, 0.112 mins elapsed.
+2021-10-13 15:47:32 : Reading Chr 12 of 21, 0.119 mins elapsed.
+2021-10-13 15:47:33 : Reading Chr 13 of 21, 0.122 mins elapsed.
+2021-10-13 15:47:33 : Reading Chr 14 of 21, 0.129 mins elapsed.
+2021-10-13 15:47:33 : Reading Chr 15 of 21, 0.136 mins elapsed.
+2021-10-13 15:47:34 : Reading Chr 16 of 21, 0.139 mins elapsed.
+2021-10-13 15:47:34 : Reading Chr 17 of 21, 0.147 mins elapsed.
+2021-10-13 15:47:34 : Reading Chr 18 of 21, 0.154 mins elapsed.
+2021-10-13 15:47:35 : Reading Chr 19 of 21, 0.157 mins elapsed.
+2021-10-13 15:47:35 : Reading Chr 20 of 21, 0.167 mins elapsed.
+2021-10-13 15:47:36 : Reading Chr 21 of 21, 0.173 mins elapsed.
+###########
+2021-10-13 15:47:36 : Merging, 0.179 mins elapsed.
+###########
+
+2021-10-13 15:47:37 : getFragmentsFromArrow Input-Parameters, Class = list
+
+getFragmentsFromArrow Input-Parameters$ArrowFile: length = 1
+                                                                       Mix2_DEDUP 
+"/home/pr46_0001/af547/git/striata/Save-ProjStriata2/ArrowFiles/Mix2_DEDUP.arrow" 
+
+
+getFragmentsFromArrow Input-Parameters$chr: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$cellNames: length = 0
+NULL
+
+
+getFragmentsFromArrow Input-Parameters$verbose: length = 1
+[1] FALSE
+
+
+getFragmentsFromArrow Input-Parameters$logFile: length = 1
+[1] "ArchRLogs/ArchR-getFragmentsFromProject-24c6012a970-Date-2021-10-13_Time-15-46-04.log"
+
+
+2021-10-13 15:47:38 : Reading Chr 1 of 21, 0.022 mins elapsed.
+2021-10-13 15:47:39 : Reading Chr 2 of 21, 0.03 mins elapsed.
+2021-10-13 15:47:39 : Reading Chr 3 of 21, 0.042 mins elapsed.
+2021-10-13 15:47:40 : Reading Chr 4 of 21, 0.045 mins elapsed.
+2021-10-13 15:47:40 : Reading Chr 5 of 21, 0.053 mins elapsed.
+2021-10-13 15:47:40 : Reading Chr 6 of 21, 0.059 mins elapsed.
+2021-10-13 15:47:41 : Reading Chr 7 of 21, 0.061 mins elapsed.
+2021-10-13 15:47:41 : Reading Chr 8 of 21, 0.072 mins elapsed.
+2021-10-13 15:47:42 : Reading Chr 9 of 21, 0.078 mins elapsed.
+2021-10-13 15:47:42 : Reading Chr 10 of 21, 0.087 mins elapsed.
+2021-10-13 15:47:42 : Reading Chr 11 of 21, 0.089 mins elapsed.
+2021-10-13 15:47:43 : Reading Chr 12 of 21, 0.099 mins elapsed.
+2021-10-13 15:47:43 : Reading Chr 13 of 21, 0.102 mins elapsed.
+2021-10-13 15:47:43 : Reading Chr 14 of 21, 0.107 mins elapsed.
+2021-10-13 15:47:44 : Reading Chr 15 of 21, 0.11 mins elapsed.
+2021-10-13 15:47:44 : Reading Chr 16 of 21, 0.117 mins elapsed.
+2021-10-13 15:47:44 : Reading Chr 17 of 21, 0.123 mins elapsed.
+2021-10-13 15:47:45 : Reading Chr 18 of 21, 0.13 mins elapsed.
+2021-10-13 15:47:45 : Reading Chr 19 of 21, 0.137 mins elapsed.
+2021-10-13 15:47:45 : Reading Chr 20 of 21, 0.14 mins elapsed.
+2021-10-13 15:47:46 : Reading Chr 21 of 21, 0.146 mins elapsed.
+###########
+2021-10-13 15:47:46 : Merging, 0.148 mins elapsed.
+###########

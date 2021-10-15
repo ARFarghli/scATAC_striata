@@ -521,7 +521,7 @@ check_haber_percentages.f <- function(SerObj, enrichedGenes_df, haber_goi, FC_th
     haber_df_tmp <- haber_df %>%
       filter(Type != "EntProgEarly")
     
-    filename = paste0(projname, '_FC', FC_thresh, '.png')
+    filename = paste0('_FC', FC_thresh, '.png')
     print(paste0('Saving percent image as: ', filename))
     
     
@@ -544,7 +544,7 @@ check_haber_percentages.f <- function(SerObj, enrichedGenes_df, haber_goi, FC_th
             
             axis.title = element_text(size = 18, face = 'bold'),
             axis.text.y = element_text(size = 16, color = 'black'),
-            axis.text.x = element_text(size = 13, color = 'black', angle = 90, hjust = 1, vjust = .5),
+            axis.text.x = element_text(size = 8, color = 'black', angle = 90, hjust = 1, vjust = .5),
             
             strip.text = element_text(face = 'bold'),
             
