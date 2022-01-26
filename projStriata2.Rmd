@@ -72,7 +72,7 @@ projStriata2 <- addClusters(
 )
 ```
 
-To access these clusters we can use the $ accessor which shows the cluster ID for each single cell.
+To access theseclusters we can use the $ accessor which shows the cluster ID for each single cell.
 ```{r Acess clusters, eval=TRUE, include=FALSE}
 head(projStriata2$Clusters)
 ```
@@ -130,9 +130,10 @@ projStriata2$Treatment <- plyr::revalue(projStriata2$Sample,
 
 ```{r UMAP Visualization, include=FALSE, eval=TRUE}
 # We can visualize the UMAP in a number of ways by calling various attributes of the cells stored in the `cellColData` matrix. Here, we can visualize the UMAP by sample, or clusters.
-p1 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p1 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Sample", embedding = "UMAP", labelSize = 0) + ggtitle("Test") + theme(legend.text = element_text(size = 45))
+
 p2 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Clusters", embedding = "UMAP")
-p3 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata2, colorBy = "cellColData", name = "Treatment", embedding = "UMAP", labelSize = 0)
 ggAlignPlots(p1, p2, p3, type = "h")
 ```
 
@@ -336,7 +337,8 @@ p8 <- plotEmbedding(
     name = markerGenes, 
     embedding = "UMAP",
     quantCut = c(0.01, 0.95),
-    imputeWeights = NULL
+    imputeWeights = NULL,
+    title = ""
 )
 ```
 
@@ -395,7 +397,8 @@ p10 <- plotEmbedding(
     colorBy = "GeneScoreMatrix", 
     name = markerGenes, 
     embedding = "UMAP",
-    imputeWeights = getImputeWeights(projStriata2)
+    imputeWeights = getImputeWeights(projStriata2),
+    
 )
 ```
 
@@ -472,7 +475,7 @@ p13 <- plotEmbedding(
     name = markerGenes, 
     embedding = "UMAP",
     imputeWeights = getImputeWeights(projStriata2)
-)
+    ) + ggtitle()
 ```
 
 ```{r}
@@ -490,7 +493,7 @@ check_haber_percentages.f <- function(SerObj, enrichedGenes_df, haber_goi, FC_th
   ### Loop through each cluster and calculate the percentage of genes from each cell type in that cluster
   #     above the FC_thresh using the output from finding highly enriched markers of each cluster
   haber_df <- data.frame()
-  for (i in  sort(unique(projStriata2$Clusters))) {
+  for (i in  sort(unique(SerObj))) {
     cat(paste0('\nCalculating Haber percentages for cluster ', i, '...'))
     df_tmp <- enrichedGenes_df %>%
       filter(Cluster == i) %>%
@@ -661,5 +664,6 @@ dotplot(cc.kegg, showCategory = 5)#scale_color_viridis(direction=-1,trans="log10
 ```{r Save ArchRProject}
 saveArchRProject(ArchRProj = projStriata2, outputDirectory = "Save-ProjStriata2", load = FALSE)
 ```
+
 
 

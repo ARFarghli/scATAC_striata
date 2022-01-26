@@ -1,0 +1,188 @@
+---
+title: "projStriata3"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r Load projStriata1, include=FALSE}
+projStriata1 <- loadArchRProject(path = "./Save-ProjStriata1/")
+projStriata2 <- loadArchRProject(path = "./Save-ProjStriata2/")
+```
+
+```{r}
+projStriata2 <- addGroupCoverages(ArchRProj = projStriata2, groupBy = "Clusters2")
+```
+
+```{r Make old and new labels}
+cM <- confusionMatrix(paste0(projStriata2$Clusters), paste0(projStriata2$Sample))
+labelOld <- rownames(cM)
+labelOld
+labelNew <- c(
+  "Unk1", #C3
+  "Unk2", #C9
+  "Unk3", #C10
+  "Unk4", #C2
+  "Neurons", #C4
+  "Astrocytes", #C5
+  "Stem Cells and OPCs", #C8
+  "Macrophages and Microglia", #C1
+  "Oligodendrocytes, NFOs, MO", # C7
+  "Astrocytes" # C6
+)
+projStriata2$Clusters2 <- mapLabels(projStriata2$Clusters, newLabels = labelNew, oldLabels = labelOld)
+```
+
+```{r Add Group Coverages}
+projStriata3 <- addGroupCoverages(ArchRProj = projStriata2, groupBy = "Clusters2")
+```
+
+```{r Path to Mac2}
+old_path <- Sys.getenv("PATH")
+macs2path <- "/home/af547/.local/bin"
+Sys.setenv(PATH = paste(macs2path, old_path, sep = ":"))
+pathToMacs2 <- findMacs2()
+```
+
+```{r MACS2 Psuedo-bulk Peak Calling}
+addArchRThreads(threads = 1)
+projStriata3 <- addReproduciblePeakSet(
+    ArchRProj = projStriata3, 
+    groupBy = "Clusters2", 
+    pathToMacs2 = pathToMacs2
+)
+getPeakSet(projStriata3)
+```
+
+```{r}
+saveArchRProject(ArchRProj = projStriata3, outputDirectory = "Save-ProjStriata3", load = FALSE)
+```
+```{r}
+projStriata4 <- addPeakMatrix(projStriata3)
+getAvailableMatrices(projStriata4)
+```
+
+```{r}
+#Our scRNA labels
+table(projStriata4$Clusters2)
+```
+
+```{r Markers peaks by clusters}
+markersPeaks <- getMarkerFeatures(
+    ArchRProj = projStriata4, 
+    useMatrix = "PeakMatrix", 
+    groupBy = "Clusters2",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  testMethod = "wilcoxon"
+)
+
+markersPeaks
+```
+
+```{r}
+markerList <- getMarkers(markersPeaks, cutOff = "FDR <= 0.01 & Log2FC >= 1")
+markerList
+markerList$Neurons
+```
+
+```{r}
+heatmapPeaks <- markerHeatmap(
+  seMarker = markersPeaks, 
+  cutOff = "FDR <= 0.1 & Log2FC >= 0.5",
+  transpose = TRUE
+)
+```
+
+```{r}
+draw(heatmapPeaks, heatmap_legend_side = "bot", annotation_legend_side = "bot")
+```
+
+```{r}
+plotPDF(heatmapPeaks, name = "Peak-Marker-Heatmap", width = 8, height = 6, ArchRProj = projStriata4, addDOC = FALSE)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markersPeaks, name = "Neurons", cutOff = "FDR <= 0.1 & Log2FC >= 1", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- markerPlot(seMarker = markersPeaks, name = "Neurons", cutOff = "FDR <= 0.1 & Log2FC >= 1", plotAs = "Volcano")
+pv
+```
+
+```{r}
+plotPDF(pma, pv, name = "Neurons-MA-Volcano", width = 5, height = 5, ArchRProj = projStriata4, addDOC = FALSE)
+```
+
+```{r Pairwise}
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "PeakMatrix",
+  groupBy = "Clusters2",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Neurons",
+  bgdGroups = "Astrocytes"
+)
+```
+
+```{r}
+metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
+neuron_cells <- rownames(metadata[metadata$Clusters2 == "Neurons",])
+
+projStriata5 <- subsetArchRProject(
+  ArchRProj = projStriata4,
+  cells = neuron_cells,
+  outputDirectory = "ArchRNeuronSubset",
+  dropCells = TRUE,
+  logFile = NULL,
+  threads = getArchRThreads(),
+  force = TRUE
+)
+```
+
+### Attempt to test treatment
+
+```{r}
+markerTest.t <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "PeakMatrix",
+  groupBy = "Treatment",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  bgdGroups = "Ctrl",
+  useGroups = "Mix",
+  threads = 1
+)
+```
+
+
+
+```{r}
+pma.t <- markerPlot(seMarker = markerTest.t, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma.t
+```
+
+```{r}
+pv.t <- markerPlot(seMarker = markerTest.t, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv.t
+```
+
