@@ -90,7 +90,8 @@ markersPeaks <- getMarkerFeatures(
     useMatrix = "PeakMatrix", 
     groupBy = "Clusters2",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  testMethod = "wilcoxon"
+  testMethod = "wilcoxon",
+  threads = 1
 )
 
 markersPeaks
@@ -145,6 +146,21 @@ markerTest <- getMarkerFeatures(
 ```
 
 ```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Neurons", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Neurons", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "Volcano")
+pv
+```
+
+
+```{r}
+saveArchRProject(ArchRProj = projStriata4, outputDirectory = "Save-ProjStriata4", load = FALSE)
+```
+
+```{r}
 metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
 neuron_cells <- rownames(metadata[metadata$Clusters2 == "Neurons",])
 
@@ -168,12 +184,11 @@ markerTest.t <- getMarkerFeatures(
   groupBy = "Treatment",
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
-  bgdGroups = "Ctrl",
   useGroups = "Mix",
+  bgdGroups = "Ctrl",
   threads = 1
 )
 ```
-
 
 
 ```{r}
@@ -185,4 +200,6 @@ pma.t
 pv.t <- markerPlot(seMarker = markerTest.t, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
 pv.t
 ```
+
+
 

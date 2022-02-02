@@ -1,0 +1,720 @@
+---
+title: "Neuron subcluster analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+library(ggpubr)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r Load projStriata1, include=FALSE}
+projStriata3 <- loadArchRProject(path = "./Save-ProjStriata3/")
+projStriata4 <- loadArchRProject(path = "./Save-ProjStriata4/")
+projStriata5 <- loadArchRProject(path = "./ArchRNeuronSubset/")
+```
+### Pairwise without subclustering: Seoyeon's method
+
+```{r}
+clusterxtrt <- paste0(projStriata4$Clusters2, "_", projStriata4$Treatment)
+projStriata4$clusterxtrt <- clusterxtrt
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Neurons_Mix",
+  bgdGroups = "Neurons_Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Neurons_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Neurons_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv
+```
+
+```{r}
+plotPDF(pma, pv, name = "Neurons-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata4, addDOC = FALSE)
+```
+
+```{r}
+projStriata4 <- addPeakMatrix(projStriata3)
+getAvailableMatrices(projStriata4)
+```
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r}
+#Our scRNA labels
+table(projStriata4$Clusters2)
+```
+
+
+```{r}
+metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
+neuron_cells <- rownames(metadata[metadata$Clusters2 == "Neurons",])
+
+projStriata5 <- subsetArchRProject(
+  ArchRProj = projStriata4,
+  cells = neuron_cells,
+  outputDirectory = "ArchRNeuronSubset",
+  dropCells = TRUE,
+  logFile = NULL,
+  threads = getArchRThreads(),
+  force = TRUE
+)
+```
+
+```{r}
+clusterxtrt <- paste0(projStriata5$Clusters2, "_", projStriata5$Treatment)
+projStriata5$clusterxtrt <- clusterxtrt
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "Treatment",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Mix",
+  bgdGroups = "Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Neurons_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= 1", plotAs = "Volcano")
+pv
+```
+
+
+## Two subcluster analysis
+
+```{r}
+projStriata5 <- addClusters(
+    input = projStriata5,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters3",
+    resolution = 0.4,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata5$Clusters3)
+table(projStriata5$Clusters3)
+cM <- confusionMatrix(paste0(projStriata5$Sample), paste0(projStriata5$Clusters3))
+cM
+```
+
+```{r}
+library(pheatmap)
+cM <- cM / Matrix::rowSums(cM)
+p <- pheatmap::pheatmap(
+    mat = as.matrix(cM), 
+    color = paletteContinuous("whiteBlue"), 
+    border_color = "black"
+)
+p
+```
+
+```{r}
+projStriata5 <- addUMAP(
+    ArchRProj = projStriata5, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine",
+    force = TRUE
+)
+```
+
+```{r}
+p1 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Clusters3", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-Neuron-subcluster-twoclusters.pdf", ArchRProj = projStriata5, addDOC = FALSE, width = 5, height = 5)
+```
+
+
+```{r}
+metadata.5 <- projStriata5@cellColData
+idxPass <- which(metadata.8$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata5$TSSEnrichment >= 4)
+cellsSample <- projStriata5$cellNames[idxSample]
+projStriata5.sub <- projStriata5[cellsSample, ]
+
+write.table(x=table(projStriata5.sub$Sample)
+            , "Neuron_subcluster_4TSSEnrichment_res.7.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = T,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+```
+
+```{r}
+table(projStriata5.sub$Treatment)
+table(projStriata5.sub$Clusters3)
+write.table(table(projStriata5.sub$Treatment), 
+            file = "Neurons-by-treatment-res.5.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
+d <- data.frame(projStriata5.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+```
+
+```{r}
+plotPDF(p4,p5, name = "Plot-UMAP-Neuron-DoubletEnrichment-TSSEnrichment-res.7", ArchRProj = projStriata5, addDOC = FALSE, width = 5, height = 5)
+```
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters3, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=2)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:2])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p6 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,70))
+p6
+p6 + ggsave(filename = "proportion_all-twoclusters.png")
+
+p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p7 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif", hide.ns = FALSE) + ggsave(filename = "proportions-treatment-twoclusters.png") 
+```
+
+### Pairwise testing for two subclusters under .4 resolution
+
+```{r}
+clusterxtrt <- paste0(projStriata5$Clusters3, "_", projStriata5$Treatment)
+projStriata5$clusterxtrt <- clusterxtrt
+markerTest1 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+#### C1 Mix vs Ctrl
+```{r}
+pma1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma1
+```
+
+```{r}
+pv1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv1
+```
+
+```{r}
+plotPDF(pma1, pv1, name = "C1-Mix-vs-Ctrl-PeakMatric-Markers-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+#### C2 Mix vs Ctrl
+```{r}
+markerTest2 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+```{r}
+plotPDF(pma2, pv2, name = "C2-Mix-vs-Ctrl-PeakMatric-Markers-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+## Neuron subset three clusters
+```{r}
+projStriata5 <- addIterativeLSI(
+    ArchRProj = projStriata5,
+    useMatrix = "TileMatrix", 
+    name = "IterativeLSI", 
+    iterations = 2, 
+    clusterParams = list( #See Seurat::FindClusters
+        resolution = c(0.2), 
+        n.start = 10
+    ), 
+    varFeatures = 25000, 
+    dimsToUse = 1:30, 
+    force = TRUE
+)
+```
+
+```{r}
+projStriata5 <- addClusters(
+    input = projStriata5,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters4",
+    resolution = 0.8,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata5$Clusters4)
+table(projStriata5$Clusters4)
+cM <- confusionMatrix(paste0(projStriata5$Sample), paste0(projStriata5$Clusters4))
+cM
+```
+
+```{r}
+library(pheatmap)
+cM <- cM / Matrix::rowSums(cM)
+p <- pheatmap::pheatmap(
+    mat = as.matrix(cM), 
+    color = paletteContinuous("whiteBlue"), 
+    border_color = "black"
+)
+p
+```
+
+```{r}
+projStriata5 <- addUMAP(
+    ArchRProj = projStriata5, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine",
+    force = TRUE
+)
+```
+
+```{r}
+p1 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Clusters4", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-Neuron-subcluster-threeclusters.pdf", ArchRProj = projStriata5, addDOC = FALSE, width = 5, height = 5)
+```
+
+
+```{r}
+metadata.3 <- projStriata5@cellColData
+idxPass <- which(metadata.3$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata5$TSSEnrichment >= 4)
+cellsSample <- projStriata5$cellNames[idxSample]
+projStriata5.sub <- projStriata5[cellsSample, ]
+
+write.table(x=table(projStriata5.sub$Sample)
+            , "Neuron_subcluster_4TSSEnrichment_threesubclusters.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = T,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+```
+
+```{r}
+table(projStriata5.sub$Treatment)
+table(projStriata5.sub$Clusters4)
+write.table(table(projStriata5.sub$Treatment), 
+            file = "Neurons-by-treatment-threesubclusters.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
+d <- data.frame(projStriata5.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+```
+
+```{r}
+plotPDF(p4,p5, name = "Plot-UMAP-Neuron-DoubletEnrichment-TSSEnrichment-threesubclusters", ArchRProj = projStriata5, addDOC = FALSE, width = 5, height = 5)
+```
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters4, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=3)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:3])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p6 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,70))
+
+p6 + ggsave(filename = "proportion_all_threeclusters.png")
+
+p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p7 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif", hide.ns = FALSE) + ggsave(filename = "proportions_treatment_threeclusters.png") 
+```
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata5, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Clusters4",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList$C1
+write.table(as.data.frame(markerList),file="markerlist_neuron_res-threeclusters.csv", quote=F,sep=",",row.names=F)
+```
+
+### Pairwise Testing for the three subclusters
+
+```{r}
+clusterxtrt <- paste0(projStriata5$Clusters4, "_", projStriata5$Treatment)
+projStriata5$clusterxtrt <- clusterxtrt
+markerTest6 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+#### C1 Mix vs Ctrl
+```{r}
+pma6 <- plotMarkers(seMarker = markerTest6, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma6
+```
+
+```{r}
+pv6 <- plotMarkers(seMarker = markerTest6, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv6
+```
+
+```{r}
+plotPDF(pma6, pv6, name = "C1-Mix-vs-Ctrl-GeneScoreMatrix-Markers-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+```{r}
+markerTest7 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma7 <- plotMarkers(seMarker = markerTest7, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma7
+```
+
+```{r}
+pv7 <- plotMarkers(seMarker = markerTest7, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv7
+```
+
+```{r}
+plotPDF(pma7, pv7, name = "C2-Mix-vs-Ctrl-PeakMatric-Markers-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+#### Subcluster 3 analysis
+
+```{r}
+markerTest8 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C3_Mix",
+  bgdGroups = "C3_Ctrl"
+)
+```
+
+```{r}
+pma8 <- plotMarkers(seMarker = markerTest8, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma8
+```
+
+```{r}
+pv8 <- plotMarkers(seMarker = markerTest8, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv8
+```
+
+```{r}
+plotPDF(pma8, pv8, name = "C3-Mix-vs-Ctrl-PeakMatric-Markers-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+
+## Four Neuron subcluster
+
+```{r}
+projStriata5 <- addClusters(
+    input = projStriata5,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters5",
+    resolution = .95,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata5$Clusters5)
+table(projStriata5$Clusters5)
+cM <- confusionMatrix(paste0(projStriata5$Sample), paste0(projStriata5$Clusters5))
+cM
+```
+
+```{r}
+library(pheatmap)
+cM <- cM / Matrix::rowSums(cM)
+p <- pheatmap::pheatmap(
+    mat = as.matrix(cM), 
+    color = paletteContinuous("whiteBlue"), 
+    border_color = "black"
+)
+p
+```
+
+```{r}
+projStriata5 <- addUMAP(
+    ArchRProj = projStriata5, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine",
+    force = TRUE
+)
+```
+
+```{r}
+p1 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Clusters5", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-Neuron-subcluster-res-fourclusters.pdf", ArchRProj = projStriata5, addDOC = FALSE, width = 5, height = 5)
+```
+
+
+```{r}
+metadata.8 <- projStriata5@cellColData
+idxPass <- which(metadata.8$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata5$TSSEnrichment >= 4)
+cellsSample <- projStriata5$cellNames[idxSample]
+projStriata5.sub <- projStriata5[cellsSample, ]
+
+write.table(x=table(projStriata5.sub$Sample)
+            , "Neuron_subcluster_4TSSEnrichment_res.8.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = T,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+```
+
+```{r}
+table(projStriata5.sub$Treatment)
+table(projStriata5.sub$Clusters5)
+write.table(table(projStriata5.sub$Treatment), 
+            file = "Neurons-by-treatment-res.8.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
+d <- data.frame(projStriata5.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata5, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+```
+
+```{r}
+plotPDF(p4,p5, name = "Plot-UMAP-Neuron-DoubletEnrichment-TSSEnrichment-res.7", ArchRProj = projStriata5, addDOC = FALSE, width = 5, height = 5)
+```
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters5, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=4)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:4])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p6 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,70))
+
+p6 + ggsave(filename = "proportion_all-fourclusters.png")
+
+p7 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p7 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif") + ggsave(filename = "proportions-treatment-fourclusters.png") 
+```
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+# We'll begin by identifying marker genes using gene scores. Recall, gene scores were added when the ArchRProject was created in
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata5, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Clusters5",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList$C4
+write.table(as.data.frame(markerList),file="markerlist_neuron_res-fourclusters.csv", quote=F,sep=",",row.names=F)
+```
+## Save ArchR Projects
+
+```{r}
+saveArchRProject(ArchRProj = projStriata4, outputDirectory = "Save-ProjStriata4/", load = FALSE)
+saveArchRProject(ArchRProj = projStriata5, outputDirectory = "ArchRNeuronSubset/", load = FALSE)
+```
