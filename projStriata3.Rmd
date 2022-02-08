@@ -185,14 +185,13 @@ markerTest.t <- getMarkerFeatures(
   testMethod = "wilcoxon",
   bias = c("TSSEnrichment", "log10(nFrags)"),
   useGroups = "Mix",
-  bgdGroups = "Ctrl",
-  threads = 1
+  bgdGroups = "Ctrl"
 )
 ```
 
 
 ```{r}
-pma.t <- markerPlot(seMarker = markerTest.t, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma.t <- plotMarkers(seMarker = markerTest.t, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
 pma.t
 ```
 

@@ -1,0 +1,488 @@
+---
+title: "Macrophages and microglia analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+library(ggpubr)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r}
+projStriata4 <- loadArchRProject(path = "./Save-ProjStriata4/")
+projStriata.glia <- loadArchRProject(path = "./GliaSubset/")
+```
+
+## Pairwise using entire dataset
+
+```{r}
+clusterxtrt <- paste0(projStriata4$Clusters2, "_", projStriata4$Treatment)
+projStriata4$clusterxtrt <- clusterxtrt
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Macrophages and Microglia_Mix",
+  bgdGroups = "Macrophages and Microglia_Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Macrophages and Microglia_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Macrophages and Microglia_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv
+```
+
+```{r}
+metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
+glia <- rownames(metadata[metadata$Clusters2 == "Macrophages and Microglia",])
+
+projStriata.glia <- subsetArchRProject(
+  ArchRProj = projStriata4,
+  cells = glia,
+  outputDirectory = "GliaSubset",
+  dropCells = TRUE,
+  logFile = NULL,
+  threads = getArchRThreads(),
+  force = TRUE
+)
+```
+
+```{r}
+plotPDF(pma, pv, name = "Macrophages-Microglia-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata.glia, addDOC = FALSE)
+```
+
+
+```{r}
+markerTest.glia <- getMarkerFeatures(
+  ArchRProj = projStriata.glia, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "Treatment",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Mix",
+  bgdGroups = "Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest.glia, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest.glia, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+
+## Subcluster analyses
+
+### Resolution .4 = three subclusters
+
+```{r}
+projStriata.glia <- addClusters(
+    input = projStriata.glia,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters3",
+    resolution = 0.4,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata.glia$Clusters3)
+table(projStriata.glia$Clusters3)
+cM <- confusionMatrix(paste0(projStriata.glia$Sample), paste0(projStriata.glia$Clusters3))
+cM
+```
+
+```{r}
+projStriata.glia <- addUMAP(
+    ArchRProj = projStriata.glia, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine",
+    force = TRUE
+)
+```
+
+```{r}
+p1 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "Clusters3", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-Glia-subcluster-threeclusters.pdf", ArchRProj = projStriata.glia, addDOC = FALSE, width = 5, height = 5)
+```
+
+
+```{r}
+metadata.4 <- projStriata.glia@cellColData
+idxPass <- which(metadata.4$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata.glia$TSSEnrichment >= 4)
+cellsSample <- projStriata.glia$cellNames[idxSample]
+projStriata.glia.sub <- projStriata.glia[cellsSample, ]
+
+write.table(x=table(projStriata.glia.sub$Sample)
+            , "./GliaSubset/glia_4TSSEnrichment-threeclusters.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = T,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+```
+
+```{r}
+table(projStriata.glia$Treatment)
+table(projStriata.glia$Clusters3)
+write.table(table(projStriata.glia$Treatment), 
+            file = "./GliaSubset/glia-by-treatment-res.4.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
+d <- data.frame(projStriata.glia.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+```
+
+```{r}
+plotPDF(p4,p5, name = "Plot-UMAP-Glia-DoubletEnrichment-TSSEnrichment-res.4", ArchRProj = projStriata.glia, addDOC = FALSE, width = 5, height = 5)
+```
+
+### Find proportions
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters3, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=3)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:3])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p1 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,80))
+p1
+p1 + ggsave(filename = "./GliaSubset/proportion_all-threeclusters.png")
+
+p2 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p2 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif", hide.ns = FALSE) + ggsave(filename = "./GliaSubset/proportions-treatment-threeclusters.png") 
+```
+### Marker Identification 
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+# We'll begin by identifying marker genes using gene scores. Recall, gene scores were added when the ArchRProject was created in
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata.glia, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Clusters3",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList1 <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList1$C3
+write.table(as.data.frame(markerList1),file="./GliaSubset/markerlist-glia-threeclusters.csv", quote=F,sep=",",row.names=F)
+```
+
+### Pairwise testing for three subclusters under .4 resolution
+
+#### C1 analysis
+```{r}
+clusterxtrt <- paste0(projStriata.glia$Clusters3, "_", projStriata.glia$Treatment)
+projStriata.glia$clusterxtrt <- clusterxtrt
+markerTest1 <- getMarkerFeatures(
+  ArchRProj = projStriata.glia, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+```{r}
+pma1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma1
+```
+
+```{r}
+pv1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv1
+```
+
+```{r}
+plotPDF(pma1, pv1, name = "C1-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata.glia, addDOC = FALSE)
+```
+
+#### C2 analysis
+
+```{r}
+markerTest2 <- getMarkerFeatures(
+  ArchRProj = projStriata.glia, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+```{r}
+plotPDF(pma2, pv2, name = "C2-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata.glia, addDOC = FALSE)
+```
+
+#### C3 analysis
+```{r}
+markerTest1 <- getMarkerFeatures(
+  ArchRProj = projStriata.glia, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C3_Mix",
+  bgdGroups = "C3_Ctrl"
+)
+```
+
+```{r}
+pma3 <- plotMarkers(seMarker = markerTest3, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma3
+```
+
+```{r}
+pv3 <- plotMarkers(seMarker = markerTest3, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv3
+```
+
+```{r}
+plotPDF(pma3, pv3, name = "C3-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata.glia, addDOC = FALSE)
+```
+
+### Resolution .1 = two subclusters
+
+```{r}
+projStriata.glia <- addClusters(
+    input = projStriata.glia,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters4",
+    resolution = 0.1,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata.glia$Clusters4)
+table(projStriata.glia$Clusters4)
+cM <- confusionMatrix(paste0(projStriata.glia$Sample), paste0(projStriata.glia$Clusters4))
+cM
+```
+
+```{r}
+p4 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "Clusters4", embedding = "UMAP")
+p6 <- plotEmbedding(ArchRProj = projStriata.glia, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p4, p5, p6, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-Glia-subcluster-threeclusters.pdf", ArchRProj = projStriata.glia, addDOC = FALSE, width = 5, height = 5)
+```
+
+### Find proportions of 2 clusters
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters4, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=2)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:2])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p3 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,80))
+p3
+p3 + ggsave(filename = "./GliaSubset/proportion_all-twoclusters.png")
+
+p4 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p4 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif", hide.ns = FALSE) + ggsave(filename = "./GliaSubset/proportions-treatment-twoclusters.png") 
+```
+
+### Marker Identification 
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+# We'll begin by identifying marker genes using gene scores. Recall, gene scores were added when the ArchRProject was created in
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata.glia, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Clusters4",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList2 <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList2$C2
+write.table(as.data.frame(markerList2),file="./GliaSubset/markerlist-glia-twoclusters.csv", quote=F,sep=",",row.names=F)
+```
+
+### Pairwise testing for two subclusters under .1 resolution
+
+#### C1 analysis
+```{r}
+clusterxtrt <- paste0(projStriata.glia$Clusters4, "_", projStriata.glia$Treatment)
+projStriata.glia$clusterxtrt <- clusterxtrt
+markerTest4 <- getMarkerFeatures(
+  ArchRProj = projStriata.glia, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+```{r}
+pma4 <- plotMarkers(seMarker = markerTest4, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma4
+```
+
+```{r}
+pv4 <- plotMarkers(seMarker = markerTest4, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv4
+```
+
+#### C1 analysis
+```{r}
+markerTest5 <- getMarkerFeatures(
+  ArchRProj = projStriata.glia, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma5 <- plotMarkers(seMarker = markerTest5, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma5
+```
+
+```{r}
+pv5 <- plotMarkers(seMarker = markerTest5, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv5
+```
+
+```{r}
+plotPDF(pma5, pv5, name = "C2-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata.glia, addDOC = FALSE)
+```
+
+```{r}
+saveArchRProject(ArchRProj = projStriata.glia, outputDirectory = "GliaSubset/", load = FALSE)
+```
+
