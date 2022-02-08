@@ -1,0 +1,428 @@
+---
+title: "Astrocyte Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+library(ggpubr)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r}
+projStriata4 <- loadArchRProject(path = "./Save-ProjStriata4/")
+```
+
+## Pairwise using entire dataset
+
+```{r}
+clusterxtrt <- paste0(projStriata4$Clusters2, "_", projStriata4$Treatment)
+projStriata4$clusterxtrt <- clusterxtrt
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Astrocytes_Mix",
+  bgdGroups = "Astrocytes_Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Astrocytes_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Astrocytes_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv
+```
+
+
+```{r}
+metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
+astrocytes <- rownames(metadata[metadata$Clusters2 == "Astrocytes",])
+
+projStriata.astrocyte <- subsetArchRProject(
+  ArchRProj = projStriata4,
+  cells = astrocytes,
+  outputDirectory = "AstrocyteSubset",
+  dropCells = TRUE,
+  logFile = NULL,
+  threads = getArchRThreads(),
+  force = TRUE
+)
+```
+
+```{r}
+plotPDF(pma, pv, name = "Astrocytes-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+### Pairwise Testing between treatment across all astrocyte cells
+```{r}
+markerTest.astrocyte <- getMarkerFeatures(
+  ArchRProj = projStriata.astrocyte, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "Treatment",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Mix",
+  bgdGroups = "Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest.astrocyte, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest.astrocyte, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+```{r}
+plotPDF(pma2, pv2, name = "Astrocytes-subset-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+### Markerlist for treatment 
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata.astrocyte, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Treatment",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList$Mix
+write.table(as.data.frame(markerList),file="./AstrocyteSubset/markerlist-by-treatment.csv", quote=F,sep=",",row.names=F)
+```
+
+## Subcluster analyses
+
+### Resolution .8 = three subclusters
+
+```{r}
+projStriata.astrocyte <- addClusters(
+    input = projStriata.astrocyte,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters3",
+    resolution = 0.8,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata.astrocyte$Clusters3)
+table(projStriata.astrocyte$Clusters3)
+cM <- confusionMatrix(paste0(projStriata.astrocyte$Sample), paste0(projStriata.astrocyte$Clusters3))
+cM
+```
+
+```{r}
+projStriata.astrocyte <- addUMAP(
+    ArchRProj = projStriata.astrocyte, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine",
+    force = TRUE
+)
+```
+
+```{r}
+p1 <- plotEmbedding(ArchRProj = projStriata.astrocyte, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata.astrocyte, colorBy = "cellColData", name = "Clusters3", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata.astrocyte, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-astrocyte-subcluster-fiveclusters.pdf", ArchRProj = projStriata.astrocyte, addDOC = FALSE, width = 5, height = 5)
+```
+
+
+```{r}
+metadata.4 <- projStriata.astrocyte@cellColData
+idxPass <- which(metadata.4$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata.astrocyte$TSSEnrichment >= 4)
+cellsSample <- projStriata.astrocyte$cellNames[idxSample]
+projStriata.astrocyte.sub <- projStriata.astrocyte[cellsSample, ]
+
+write.table(x=table(projStriata.astrocyte.sub$Sample)
+            , "./AstrocyteSubset/astrocyte_4TSSEnrichment-fiveclusters.txt", append = FALSE, quote = FALSE, sep = "\t",
+            eol = "\n", na = "NA", dec = ".", row.names = T,
+            col.names = TRUE, qmethod = c("escape", "double"),
+            fileEncoding = "")
+```
+
+```{r}
+table(projStriata.astrocyte$Treatment)
+table(projStriata.astrocyte$Clusters3)
+write.table(table(projStriata.astrocyte$Treatment), 
+            file = "./AstrocyteSubset/astrocyte-by-treatment-.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
+d <- data.frame(projStriata.astrocyte.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata.astrocyte, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata.astrocyte, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+ggAlignPlots(p4, p5, type = "h")
+```
+
+```{r}
+plotPDF(p4, p5, name = "Plot-UMAP-astrocyte-DoubletEnrichment-TSSEnrichment", ArchRProj = projStriata.astrocyte, addDOC = FALSE, width = 5, height = 5)
+```
+
+### Find proportions
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters3, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=5)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:5])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p1 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,80))
+p1
+p1 + ggsave(filename = "./AstrocyteSubset/proportion_all-fiveclusters.png")
+
+p2 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p2 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif", hide.ns = FALSE) + ggsave(filename = "./AstrocyteSubset/proportions-treatment-fiveclusters.png") 
+```
+### Marker Identification 
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+# We'll begin by identifying marker genes using gene scores. Recall, gene scores were added when the ArchRProject was created in
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata.astrocyte, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Clusters3",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList1 <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList1$C3
+write.table(as.data.frame(markerList1),file="./AstrocyteSubset/markerlist-astrocyte-fiveclusters.csv", quote=F,sep=",",row.names=F)
+```
+
+### Pairwise testing for five subclusters under .8 resolution
+
+#### C1 analysis
+```{r}
+clusterxtrt <- paste0(projStriata.astrocyte$Clusters3, "_", projStriata.astrocyte$Treatment)
+projStriata.astrocyte$clusterxtrt <- clusterxtrt
+markerTest1 <- getMarkerFeatures(
+  ArchRProj = projStriata.astrocyte, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+```{r}
+pma1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma1
+```
+
+```{r}
+pv1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv1
+```
+
+```{r}
+plotPDF(pma1, pv1, name = "C1-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-fivesubclusters", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+#### C2 analysis
+
+```{r}
+markerTest2 <- getMarkerFeatures(
+  ArchRProj = projStriata.astrocyte, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+```{r}
+plotPDF(pma2, pv2, name = "C2-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-fivesubclusters", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+#### C3 analysis
+```{r}
+markerTest3 <- getMarkerFeatures(
+  ArchRProj = projStriata.astrocyte, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C3_Mix",
+  bgdGroups = "C3_Ctrl"
+)
+```
+
+```{r}
+pma3 <- plotMarkers(seMarker = markerTest3, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma3
+```
+
+```{r}
+pv3 <- plotMarkers(seMarker = markerTest3, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv3
+```
+
+```{r}
+plotPDF(pma3, pv3, name = "C3-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-fivesubclusters", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+#### C4 analysis
+
+```{r}
+markerTest4 <- getMarkerFeatures(
+  ArchRProj = projStriata.astrocyte, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C4_Mix",
+  bgdGroups = "C4_Ctrl"
+)
+```
+
+```{r}
+pma4 <- plotMarkers(seMarker = markerTest4, name = "C4_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma4
+```
+
+```{r}
+pv4 <- plotMarkers(seMarker = markerTest4, name = "C4_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv4
+```
+
+```{r}
+plotPDF(pma4, pv4, name = "C4-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-fivesubclusters", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+#### C5 analysis
+
+```{r}
+markerTest5 <- getMarkerFeatures(
+  ArchRProj = projStriata.astrocyte, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C5_Mix",
+  bgdGroups = "C5_Ctrl"
+)
+```
+
+```{r}
+pma5 <- plotMarkers(seMarker = markerTest5, name = "C5_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma5
+```
+
+```{r}
+pv5 <- plotMarkers(seMarker = markerTest5, name = "C5_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv5
+```
+
+```{r}
+plotPDF(pma5, pv5, name = "C5-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-fivesubclusters", width = 5, height = 5, ArchRProj = projStriata.astrocyte, addDOC = FALSE)
+```
+
+### Save Astrocyte project
+
+```{r}
+saveArchRProject(ArchRProj = projStriata.astrocyte, outputDirectory = "AstrocyteSubset/", load = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
