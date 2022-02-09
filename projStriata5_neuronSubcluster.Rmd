@@ -26,7 +26,7 @@ addArchRThreads(threads = 22)
 ```{r Load projStriata1, include=FALSE}
 projStriata3 <- loadArchRProject(path = "./Save-ProjStriata3/")
 projStriata4 <- loadArchRProject(path = "./Save-ProjStriata4/")
-projStriata5 <- loadArchRProject(path = "./ArchRNeuronSubset/")
+projStriata5 <- loadArchRProject(path = "./NeuronSubset/")
 ```
 ### Pairwise without subclustering: Seoyeon's method
 
@@ -338,10 +338,10 @@ pv2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1
 pv2
 ```
 
-```{r}
-plotPDF(pma2, pv2, name = "C2-Mix-vs-Ctrl-GeneScoreMatrix-Markers-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
-```
 
+```{r}
+plotPDF(pma2, pv2, name = "C2-Mix-vs-Ctrl-PeakMatrix-Markers-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
 ### Resolution 0.8 - Three cluster analysis
 
 ```{r}
@@ -872,6 +872,226 @@ pv12
 
 ```{r}
 plotPDF(pma12, pv12, name = "C4-Mix-vs-Ctrl-GeneScoreMatrix-Markers-MA-Volcano-foursubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+## Neuron analysis using Peak Matrix
+
+### Pairwise Testing by Treatment
+
+```{r Marker identificiation by treatment using peak matrix}
+getAvailableMatrices(projStriata5)
+table(projStriata5$Treatment)
+
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "Treatment",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Mix",
+  bgdGroups = "Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv
+```
+
+```{r}
+plotPDF(pma, pv, name = "Neurons-PeakMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+### Marker Identification 
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+table(projStriata5$Clusters3)
+
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata5, 
+    useMatrix = "PeakMatrix", 
+    groupBy = "Clusters3",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList1 <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList1$C2
+write.table(as.data.frame(markerList1),file="./NeuronSubset/markerlist-byPeaks-neurons-twoclusters.csv", quote = F, sep = ",", row.names = F)
+```
+
+### Pairwise testing for two subclusters under .4 resolution
+
+#### C1 analysis
+```{r}
+clusterxtrt <- paste0(projStriata5$Clusters3, "_", projStriata5$Treatment)
+projStriata5$clusterxtrt <- clusterxtrt
+markerTest1 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+#### C1 Mix vs Ctrl
+
+```{r}
+pma1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma1
+```
+
+```{r}
+pv1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv1
+```
+
+```{r}
+plotPDF(pma1, pv1, name = "C1-Mix-vs-Ctrl-PeakMatrix-Markers-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+#### C2 Mix vs Ctrl
+
+```{r}
+markerTest2 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+## Three subcluster analysis by PeakMatrix
+
+### Marker Identification 
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+table(projStriata5$Clusters4)
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata5, 
+    useMatrix = "PeakMatrix", 
+    groupBy = "Clusters4",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList1 <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList1$C1
+write.table(as.data.frame(markerList1),file="./NeuronSubset/markerlist-byPeakMatrix-neurons-threeclusters.csv", quote = F, sep = ",", row.names = F)
+```
+
+### Pairwise Testing for the three subclusters under .8 resolution
+#### C1 Mix vs Ctrl
+
+```{r}
+clusterxtrt <- paste0(projStriata5$Clusters4, "_", projStriata5$Treatment)
+projStriata5$clusterxtrt <- clusterxtrt
+markerTest6 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+
+```{r}
+pma6 <- plotMarkers(seMarker = markerTest6, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma6
+```
+
+```{r}
+pv6 <- plotMarkers(seMarker = markerTest6, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv6
+```
+
+```{r}
+plotPDF(pma6, pv6, name = "C1-Mix-vs-Ctrl-PeakMatrix-Markers-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+#### C2 Mix vs Ctrl
+
+```{r}
+markerTest7 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma7 <- plotMarkers(seMarker = markerTest7, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma7
+```
+
+```{r}
+pv7 <- plotMarkers(seMarker = markerTest7, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv7
+```
+
+```{r}
+plotPDF(pma7, pv7, name = "C2-Mix-vs-Ctrl-PeakMatrix-Markers-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
+```
+
+#### C3 Mix vs Ctrl analysis
+
+```{r}
+markerTest8 <- getMarkerFeatures(
+  ArchRProj = projStriata5, 
+  useMatrix = "PeakMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C3_Mix",
+  bgdGroups = "C3_Ctrl"
+)
+```
+
+```{r}
+pma8 <- plotMarkers(seMarker = markerTest8, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma8
+```
+
+```{r}
+pv8 <- plotMarkers(seMarker = markerTest8, name = "C3_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv8
+```
+
+```{r}
+plotPDF(pma8, pv8, name = "C3-Mix-vs-Ctrl-PeakMatrix-Markers-MA-Volcano-threesubclusters", width = 5, height = 5, ArchRProj = projStriata5, addDOC = FALSE)
 ```
 
 ## Save ArchR Projects
