@@ -1,0 +1,284 @@
+---
+title: "Oligodendrocytes"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+library(ggpubr)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r}
+projStriata4 <- loadArchRProject(path = "./Save-ProjStriata4/")
+```
+
+## Pairwise using entire dataset
+
+```{r}
+clusterxtrt <- paste0(projStriata4$Clusters2, "_", projStriata4$Treatment)
+projStriata4$clusterxtrt <- clusterxtrt
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Oligodendrocytes, NFOs, MO_Mix",
+  bgdGroups = "Oligodendrocytes, NFOs, MO_Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Oligodendrocytes, NFOs, MO_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Oligodendrocytes, NFOs, MO_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv
+```
+
+```{r}
+plotPDF(pma, pv, name = "Oligo-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata4, addDOC = FALSE)
+```
+
+## Subset Oligodendrocytes
+
+```{r}
+metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
+oligo <- rownames(metadata[metadata$Clusters2 == "Oligodendrocytes, NFOs, MO",])
+
+projStriata.oligo <- subsetArchRProject(
+  ArchRProj = projStriata4,
+  cells = oligo,
+  outputDirectory = "OligoSubset",
+  dropCells = TRUE,
+  logFile = NULL,
+  threads = getArchRThreads(),
+  force = TRUE
+)
+```
+
+```{r}
+plotPDF(pma, pv, name = "Oligo-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata.oligo, addDOC = FALSE)
+```
+
+### Markerlist for oligo subset by treatment 
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata.oligo, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Treatment",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList$Ctrl
+write.table(as.data.frame(markerList),file="./OligoSubset/markerlist-subsetOligo-by-treatment.csv", quote=F,sep=",",row.names=F)
+```
+
+## Subclustering Analyses
+
+### Resolution 0.8 - Two cluster analysis
+
+```{r}
+projStriata.oligo <- addClusters(
+    input = projStriata.oligo,
+    reducedDims = "IterativeLSI",
+    method = "Seurat",
+    name = "Clusters3",
+    resolution = 0.6,
+    force = TRUE
+)
+```
+
+```{r}
+head(projStriata.oligo$Clusters3)
+table(projStriata.oligo$Clusters3)
+cM <- confusionMatrix(paste0(projStriata.oligo$Sample), paste0(projStriata.oligo$Clusters3))
+cM
+```
+
+```{r}
+projStriata.oligo <- addUMAP(
+    ArchRProj = projStriata.oligo, 
+    reducedDims = "IterativeLSI", 
+    name = "UMAP", 
+    nNeighbors = 30, 
+    minDist = 0.5, 
+    metric = "cosine",
+    force = TRUE
+)
+```
+
+```{r}
+p1 <- plotEmbedding(ArchRProj = projStriata.oligo, colorBy = "cellColData", name = "Sample", embedding = "UMAP")
+p2 <- plotEmbedding(ArchRProj = projStriata.oligo, colorBy = "cellColData", name = "Clusters3", embedding = "UMAP")
+p3 <- plotEmbedding(ArchRProj = projStriata.oligo, colorBy = "cellColData", name = "Treatment", embedding = "UMAP")
+ggAlignPlots(p1, p2, p3, type = "h")
+```
+
+```{r}
+plotPDF(p1,p2, p3, name = "Plot-UMAP-oligo-subcluster-twoclusters.pdf", ArchRProj = projStriata.oligo, addDOC = FALSE, width = 5, height = 5)
+```
+
+```{r}
+table(projStriata.oligo$Treatment)
+table(projStriata.oligo$Clusters3)
+write.table(table(projStriata.oligo$Treatment), 
+            file = "./OligoSubset/oligo-by-treatment-.csv", 
+            quote=F,
+            sep=",",
+            row.names=F)
+
+metadata.4 <- projStriata.oligo@cellColData
+idxPass <- which(metadata.4$TSSEnrichment >= 4)
+idxSample <- BiocGenerics::which(projStriata.oligo$TSSEnrichment >= 4)
+cellsSample <- projStriata.oligo$cellNames[idxSample]
+projStriata.oligo.sub <- projStriata.oligo[cellsSample, ]
+d <- data.frame(projStriata.oligo.sub@cellColData)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), mean)
+aggregate(d[, c("nFrags","TSSEnrichment")], list(d$Treatment), median)
+
+p4 <- plotEmbedding(ArchRProj = projStriata.oligo, colorBy = "cellColData", name = "DoubletEnrichment", embedding = "UMAP")
+p5 <- plotEmbedding(ArchRProj = projStriata.oligo, colorBy = "cellColData", name = "TSSEnrichment", embedding = "UMAP")
+ggAlignPlots(p4, p5, type = "h")
+```
+
+```{r}
+plotPDF(p4, p5, name = "Plot-UMAP-oligo-DoubletEnrichment-TSSEnrichment", ArchRProj = projStriata.oligo, addDOC = FALSE, width = 5, height = 5)
+```
+
+### Find proportions
+
+```{r}
+library(plyr)
+cp <- ddply(d, .(d$Sample, d$Clusters3, d$Treatment), nrow)
+names(cp) <- c("sample", "cluster", "treatment", "cells")
+
+table(cp$sample) 
+
+# put # of clusters to each = 
+cells_per_sample <-rep(table(d$Sample),each=2)
+
+# this should be the same
+length(cp$sample)
+length(cells_per_sample)
+
+cp$ratio <- as.numeric(cp$cells)/cells_per_sample
+sum(cp$ratio[1:2])
+
+cp$group <- cp$sample
+cp$group2 <- gsub("[0-9]_DEDUP", "",cp$group)
+cp$proportion <- cp$ratio*100
+
+cp$cluster <- factor(cp$cluster)
+levels(cp$cluster)
+cp <- cp %>% 
+  unite(grouping, c(cluster, treatment), remove = FALSE)
+```
+
+```{r}
+p1 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group)) +
+    geom_bar(stat = "identity", color = "black",
+           position = position_dodge()) +
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE", "#4393C3","#2166AC", "#F4A582", "#D6604D","#B2182B", "#7FCDBB"
+)) +ylim(c(0,80))
+p1
+p1 + ggsave(filename = "./OligoSubset/proportion_all-fiveclusters.png")
+
+p2 <- ggplot(cp, aes(x = cluster, y = proportion, fill = group2)) +
+  geom_boxplot() +
+  geom_point(shape = 21, position = position_jitterdodge(jitter.width = 0), size = 0.2) + 
+  theme_classic() +
+  scale_fill_manual(values=c("#BABABA", "#92C5DE"))
+
+p2 + stat_compare_means(aes(group = group2), method = "t.test", label="p.signif", hide.ns = FALSE) + ggsave(filename = "./OligoSubset/proportions-treatment-fiveclusters.png") 
+```
+
+### Pairwise testing for two subclusters under .8 resolution
+
+#### C1 analysis
+```{r}
+clusterxtrt <- paste0(projStriata.oligo$Clusters3, "_", projStriata.oligo$Treatment)
+projStriata.oligo$clusterxtrt <- clusterxtrt
+markerTest1 <- getMarkerFeatures(
+  ArchRProj = projStriata.oligo, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C1_Mix",
+  bgdGroups = "C1_Ctrl"
+)
+```
+
+```{r}
+pma1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma1
+```
+
+```{r}
+pv1 <- plotMarkers(seMarker = markerTest1, name = "C1_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv1
+```
+
+```{r}
+plotPDF(pma1, pv1, name = "C1-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata.oligo, addDOC = FALSE)
+```
+
+#### C2 analysis
+
+```{r}
+markerTest2 <- getMarkerFeatures(
+  ArchRProj = projStriata.oligo, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "C2_Mix",
+  bgdGroups = "C2_Ctrl"
+)
+```
+
+```{r}
+pma2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma2
+```
+
+```{r}
+pv2 <- plotMarkers(seMarker = markerTest2, name = "C2_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv2
+```
+
+```{r}
+plotPDF(pma2, pv2, name = "C2-Mix-vs-Ctrl-GeneScoreMatrix-MA-Volcano-twosubclusters", width = 5, height = 5, ArchRProj = projStriata.oligo, addDOC = FALSE)
+```
+
+
+### Save Astrocyte project
+
+```{r}
+saveArchRProject(ArchRProj = projStriata.oligo, outputDirectory = "OligoSubset/", load = FALSE)
+```
