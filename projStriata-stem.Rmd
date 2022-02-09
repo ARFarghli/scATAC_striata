@@ -1,0 +1,104 @@
+---
+title: "Stem Cell analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r install and load libraries, echo = F, message = F, warning = F, include=FALSE}
+library(ArchR)
+library(knitr)
+library(tidyverse)
+library(clusterProfiler)
+library(org.Mm.eg.db)
+library(dplyr)
+library(viridis)
+library(ggpubr)
+```
+
+```{r set threads, message = F, warning = F, include=FALSE}
+#set threads specific to your machine
+addArchRThreads(threads = 22) 
+```
+
+```{r}
+projStriata4 <- loadArchRProject(path = "./Save-ProjStriata4/")
+```
+
+## Pairwise using entire dataset
+
+```{r}
+clusterxtrt <- paste0(projStriata4$Clusters2, "_", projStriata4$Treatment)
+projStriata4$clusterxtrt <- clusterxtrt
+markerTest <- getMarkerFeatures(
+  ArchRProj = projStriata4, 
+  useMatrix = "GeneScoreMatrix",
+  groupBy = "clusterxtrt",
+  testMethod = "wilcoxon",
+  bias = c("TSSEnrichment", "log10(nFrags)"),
+  useGroups = "Stem Cells and OPCs_Mix",
+  bgdGroups = "Stem Cells and OPCs_Ctrl"
+)
+```
+
+```{r}
+pma <- plotMarkers(seMarker = markerTest, name = "Stem Cells and OPCs_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "MA")
+pma
+```
+
+```{r}
+pv <- plotMarkers(seMarker = markerTest, name = "Stem Cells and OPCs_Mix", cutOff = "FDR <= 0.1 & abs(Log2FC) >= .5", plotAs = "Volcano")
+pv
+```
+
+```{r}
+plotPDF(pma, pv, name = "stem-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata4, addDOC = FALSE)
+```
+
+## Subset stem cells
+
+```{r}
+metadata <- as.data.frame(getCellColData(ArchRProj = projStriata4))
+stem <- rownames(metadata[metadata$Clusters2 == "Stem Cells and OPCs",])
+
+projStriata.stem <- subsetArchRProject(
+  ArchRProj = projStriata4,
+  cells = stem,
+  outputDirectory = "StemSubset",
+  dropCells = TRUE,
+  logFile = NULL,
+  threads = getArchRThreads(),
+  force = TRUE
+)
+```
+
+```{r}
+plotPDF(pma, pv, name = "stem-GeneScoreMatrix-Mix-vs-Ctrl", width = 5, height = 5, ArchRProj = projStriata.stem, addDOC = FALSE)
+```
+
+### Markerlist for stem subset by treatment 
+
+```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
+markersGS <- getMarkerFeatures(
+    ArchRProj = projStriata.stem, 
+    useMatrix = "GeneScoreMatrix", 
+    groupBy = "Treatment",
+    bias = c("TSSEnrichment", "log10(nFrags)"),
+    testMethod = "wilcoxon", 
+    threads = 1
+)
+```
+
+```{r Marker gene statistical and expression cutoff, eval=TRUE}
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= .5")
+markerList$Mix
+write.table(as.data.frame(markerList),file="./StemSubset/markerlist-subsetstem-by-treatment.csv", quote=F,sep=",",row.names=F)
+```
+
+### Save Stem project
+
+```{r}
+saveArchRProject(ArchRProj = projStriata.stem, outputDirectory = "StemSubset/", load = FALSE)
+```
