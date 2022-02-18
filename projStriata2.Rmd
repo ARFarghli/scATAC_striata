@@ -241,22 +241,20 @@ write.table(count(scATACmarkers$group_name),file = "markerscount.csv", quote=F,s
 
 ```{r Marker gene identification using gene scores, echo=TRUE, message=FALSE, cache=FALSE, results='hide'}
 # We'll begin by identifying marker genes using gene scores. Recall, gene scores were added when the ArchRProject was created in
-addArchRThreads(threads = 1)
 markersGS <- getMarkerFeatures(
     ArchRProj = projStriata2, 
     useMatrix = "GeneScoreMatrix", 
     groupBy = "Clusters",
     bias = c("TSSEnrichment", "log10(nFrags)"),
-    testMethod = "wilcoxon"
-)
+    testMethod = "wilcoxon", 
+    threads = 1)
 ```
 
 We can then make a list of marker genes with the desired cutoffs and list for each cluster
 ```{r Marker gene statistical and expression cutoff, eval=TRUE}
-addArchRThreads(threads = 22)
-markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= 1.25")
+markerList <- getMarkers(markersGS, cutOff = "FDR <= 0.01 & Log2FC >= 1.0")
 markerList$C2
-write.table(as.data.frame(markerList),file="markerlist.csv", quote=F,sep=",",row.names=F)
+write.table(as.data.frame(markerList),file="markerlist_1.csv", quote=F,sep=",",row.names=F)
 ```
 
 ```{r, include=FALSE, eval=TRUE}
